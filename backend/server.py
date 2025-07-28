@@ -1840,6 +1840,7 @@ async def get_admin_dashboard(current_user: dict = Depends(get_current_user)):
 @api_router.get("/admin/users")
 async def get_all_users(
     user_type: Optional[str] = None,
+    mobile_search: Optional[str] = None,
     skip: int = 0,
     limit: int = 50,
     current_user: dict = Depends(get_current_user)
@@ -1850,6 +1851,14 @@ async def get_all_users(
     query = {}
     if user_type:
         query["user_type"] = user_type
+    
+    # Add mobile number search functionality
+    if mobile_search:
+        # Remove any non-digit characters and search for partial matches
+        clean_mobile = ''.join(filter(str.isdigit, mobile_search))
+        if clean_mobile:
+            # Search for phone numbers containing the digits
+            query["phone"] = {"$regex": clean_mobile, "$options": "i"}
     
     users_cursor = db.users.find(query, {"password": 0}).skip(skip).limit(limit)
     users = await users_cursor.to_list(limit)
