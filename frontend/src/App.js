@@ -1025,6 +1025,8 @@ const RiderDashboard = () => {
   const [estimatedDistance, setEstimatedDistance] = useState(0);
   const [availableDrivers, setAvailableDrivers] = useState([]);
   const [currentRides, setCurrentRides] = useState([]);
+  const [rideHistory, setRideHistory] = useState([]);
+  const [showHistory, setShowHistory] = useState(false);
   const [currentLocation, setCurrentLocation] = useState(null);
   const [mapElement, setMapElement] = useState(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
