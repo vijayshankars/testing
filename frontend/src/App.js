@@ -1370,6 +1370,9 @@ const RiderDashboard = () => {
   const [driverMarkers, setDriverMarkers] = useState([]);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [selectedRideForCancel, setSelectedRideForCancel] = useState(null);
+  const [driverMarkers, setDriverMarkers] = useState([]);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [selectedRideForCancel, setSelectedRideForCancel] = useState(null);
   
   const { user, logout } = useAuth();
   const { loaded, initMap, calculateRoute, getUserLocation, searchPlaces } = useGoogleMaps();
