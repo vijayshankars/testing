@@ -402,7 +402,9 @@ const DriverDashboard = () => {
     per_km_rate: '',
     vehicle_type: '',
     vehicle_number: '',
-    license_number: ''
+    license_number: '',
+    license_document: null,
+    registration_document: null
   });
   
   const { user, logout } = useAuth();
