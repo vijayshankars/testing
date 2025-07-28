@@ -540,9 +540,24 @@ const DriverDashboard = () => {
     license_document: null,
     registration_document: null
   });
+  const [flashEffect, setFlashEffect] = useState(false);
   
   const { user, logout } = useAuth();
   const { getUserLocation } = useGoogleMaps();
+  
+  // Use notification system
+  const { notificationPermission } = useDriverNotifications(isAvailable, rideRequests);
+
+  // Handle visual flash effect for new requests
+  useEffect(() => {
+    const handleNewRideRequest = (event) => {
+      setFlashEffect(true);
+      setTimeout(() => setFlashEffect(false), 2000);
+    };
+
+    window.addEventListener('newRideRequest', handleNewRideRequest);
+    return () => window.removeEventListener('newRideRequest', handleNewRideRequest);
+  }, []);
 
   useEffect(() => {
     fetchDriverProfile();
