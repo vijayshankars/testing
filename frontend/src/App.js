@@ -967,6 +967,18 @@ const RiderDashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* UPI Payment Modal */}
+      {showPaymentModal && selectedRideForPayment && (
+        <UPIPaymentModal
+          ride={selectedRideForPayment}
+          onClose={() => {
+            setShowPaymentModal(false);
+            setSelectedRideForPayment(null);
+          }}
+          onPaymentSuccess={handlePaymentSuccess}
+        />
+      )}
     </div>
   );
 };
