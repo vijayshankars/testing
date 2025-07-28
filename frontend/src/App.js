@@ -1246,6 +1246,11 @@ const RiderDashboard = () => {
   const [driverMarkers, setDriverMarkers] = useState([]);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [selectedRideForCancel, setSelectedRideForCancel] = useState(null);
+  const [promoCode, setPromoCode] = useState('');
+  const [appliedDiscount, setAppliedDiscount] = useState(null);
+  const [availableDiscounts, setAvailableDiscounts] = useState([]);
+  const [showDiscountModal, setShowDiscountModal] = useState(false);
+  const [isApplyingDiscount, setIsApplyingDiscount] = useState(false);
   
   const { user, logout } = useAuth();
   const { loaded, initMap, calculateRoute, getUserLocation, searchPlaces } = useGoogleMaps();
