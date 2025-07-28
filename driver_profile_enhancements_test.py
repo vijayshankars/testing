@@ -420,7 +420,7 @@ class DriverProfileEnhancementsTest:
         # Step 1: Create test driver via OTP
         if not self.create_test_driver_via_otp():
             print("❌ Failed to create test driver. Stopping tests.")
-            return
+            return None
         
         # Step 2: Test VAHAN license verification
         print("\n📋 Testing VAHAN License Verification...")
