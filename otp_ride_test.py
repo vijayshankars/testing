@@ -392,7 +392,7 @@ def test_error_scenarios(result: TestResult):
         
         if response.status_code == 200:
             verify_data = {
-                "phone_number": "+91 9876543212",
+                "phone_number": "+91 9876543214",
                 "otp_code": DEMO_OTP,
                 "user_type": "driver",
                 "name": "Wrong Driver"
