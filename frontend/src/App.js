@@ -1670,10 +1670,13 @@ const RiderDashboard = () => {
   };
 
   const cancelRide = async (rideId, reason = "User cancelled") => {
-    if (!confirm('Are you sure you want to cancel this ride?')) {
-      return;
-    }
+    setSelectedRideForCancel(rideId);
+    setShowCancelModal(true);
+  };
 
+  const confirmCancelRide = async (reason = "User cancelled") => {
+    const rideId = selectedRideForCancel;
+    
     try {
       console.log('Attempting to cancel ride:', rideId); // Debug log
       
@@ -1685,6 +1688,10 @@ const RiderDashboard = () => {
       console.log('Cancel ride response:', response.data); // Debug log
       alert('Ride cancelled successfully');
       fetchCurrentRides(); // Refresh the rides list
+      
+      // Close modal
+      setShowCancelModal(false);
+      setSelectedRideForCancel(null);
     } catch (error) {
       console.error('Error cancelling ride:', error);
       const errorMessage = error.response?.data?.detail || error.message || 'Unknown error';
