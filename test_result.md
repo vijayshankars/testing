@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Test the ride sharing app backend with comprehensive testing including API health check, authentication system, driver functionality, rider functionality, ride matching system, database integration, and error handling."
+user_problem_statement: "Test the ride sharing app frontend comprehensively including authentication flow, driver dashboard, rider dashboard, Google Maps integration, responsive design, real-time features, and error handling."
 
 backend:
   - task: "Basic API Health Check"
