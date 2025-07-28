@@ -1806,24 +1806,93 @@ const RiderDashboard = () => {
                 </div>
                 
                 {estimatedFare > 0 && (
-                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium">Estimated Fare:</span>
-                      <span className="text-2xl font-bold text-blue-600 flex items-center">
-                        <IndianRupee className="w-5 h-5 mr-1" />
-                        {estimatedFare}
-                      </span>
-                    </div>
-                    <div className="text-sm text-gray-600 mt-1 flex justify-between">
-                      <span>Distance: {estimatedDistance.toFixed(1)} km</span>
-                      <span>Rate: ₹{availableDrivers.length > 0 ? (availableDrivers.reduce((sum, driver) => sum + driver.per_km_rate, 0) / availableDrivers.length).toFixed(1) : '15'}/km</span>
-                    </div>
-                    
-                    <div className="mt-3 p-2 bg-green-50 rounded text-sm text-green-700">
-                      <div className="flex items-center">
-                        <MapPin className="w-4 h-4 mr-2" />
-                        Route calculated using Google Maps
+                  <div className="space-y-4">
+                    {/* Estimated Fare Display */}
+                    <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium">Estimated Fare:</span>
+                        <span className="text-2xl font-bold text-blue-600 flex items-center">
+                          <IndianRupee className="w-5 h-5 mr-1" />
+                          {estimatedFare}
+                        </span>
                       </div>
+                      <div className="text-sm text-gray-600 mt-1 flex justify-between">
+                        <span>Distance: {estimatedDistance.toFixed(1)} km</span>
+                        <span>Rate: ₹{availableDrivers.length > 0 ? (availableDrivers.reduce((sum, driver) => sum + driver.per_km_rate, 0) / availableDrivers.length).toFixed(1) : '15'}/km</span>
+                      </div>
+                      
+                      <div className="mt-3 p-2 bg-green-50 rounded text-sm text-green-700">
+                        <div className="flex items-center">
+                          <MapPin className="w-4 h-4 mr-2" />
+                          Route calculated using Google Maps
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Discount Section */}
+                    <div className="p-4 bg-orange-50 rounded-lg border border-orange-200">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="font-medium text-orange-900">Apply Discount Code</h3>
+                        <button
+                          onClick={() => {
+                            fetchAvailableDiscounts();
+                            setShowDiscountModal(true);
+                          }}
+                          className="text-orange-600 hover:text-orange-800 text-sm underline"
+                        >
+                          View Available Offers
+                        </button>
+                      </div>
+                      
+                      <div className="flex space-x-2 mb-3">
+                        <input
+                          type="text"
+                          value={promoCode}
+                          onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                          placeholder="Enter promo code"
+                          className="flex-1 px-3 py-2 border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
+                        />
+                        <button
+                          onClick={applyDiscountCode}
+                          disabled={isApplyingDiscount || !promoCode.trim()}
+                          className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium text-sm"
+                        >
+                          {isApplyingDiscount ? 'Applying...' : 'Apply'}
+                        </button>
+                      </div>
+
+                      {appliedDiscount && (
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center">
+                              <CheckCircle className="w-4 h-4 text-green-600 mr-2" />
+                              <span className="text-sm font-medium text-green-800">
+                                Discount Applied: {appliedDiscount.code}
+                              </span>
+                            </div>
+                            <button
+                              onClick={clearDiscount}
+                              className="text-red-600 hover:text-red-800 text-xs"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                          <div className="space-y-1 text-sm text-green-700">
+                            <div className="flex justify-between">
+                              <span>Original Fare:</span>
+                              <span>₹{appliedDiscount.original_fare}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Discount ({appliedDiscount.type}):</span>
+                              <span className="text-green-600 font-medium">-₹{appliedDiscount.discount_amount}</span>
+                            </div>
+                            <div className="flex justify-between font-bold border-t border-green-200 pt-1">
+                              <span>Final Fare:</span>
+                              <span className="text-green-600">₹{appliedDiscount.final_fare}</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
