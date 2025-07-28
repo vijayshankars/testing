@@ -43,6 +43,17 @@ if not stripe_api_key:
 else:
     stripe_checkout = None  # Will be initialized per request
 
+# Initialize Razorpay
+razorpay_key_id = os.environ.get('RAZORPAY_KEY_ID')
+razorpay_key_secret = os.environ.get('RAZORPAY_KEY_SECRET')
+razorpay_webhook_secret = os.environ.get('RAZORPAY_WEBHOOK_SECRET')
+
+if razorpay_key_id and razorpay_key_secret:
+    razorpay_client = razorpay.Client(auth=(razorpay_key_id, razorpay_key_secret))
+else:
+    logging.warning("Razorpay credentials not found in environment variables")
+    razorpay_client = None
+
 # Create the main app without a prefix
 app = FastAPI(title="RideShare API")
 
