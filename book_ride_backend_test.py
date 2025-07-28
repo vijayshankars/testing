@@ -599,6 +599,7 @@ def test_available_drivers(result: TestResult, rider_token: str):
                     
                     # Check driver data structure
                     first_driver = drivers[0]
+                    print(f"DEBUG: First driver data: {first_driver}")
                     required_fields = ["driver_id", "name", "vehicle_type", "per_km_rate", "distance"]
                     
                     if all(field in first_driver for field in required_fields):
