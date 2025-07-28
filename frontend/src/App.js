@@ -549,6 +549,8 @@ const DriverDashboard = () => {
   const [selectedRideForOTP, setSelectedRideForOTP] = useState(null);
   const [isVerifyingLicense, setIsVerifyingLicense] = useState(false);
   const [licenseVerificationStatus, setLicenseVerificationStatus] = useState(null);
+  const [isVerifyingVehicle, setIsVerifyingVehicle] = useState(false);
+  const [vehicleVerificationStatus, setVehicleVerificationStatus] = useState(null);
   
   const { user, logout } = useAuth();
   const { getUserLocation } = useGoogleMaps();
