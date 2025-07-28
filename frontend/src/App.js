@@ -1582,16 +1582,16 @@ const RiderDashboard = () => {
     const rideId = selectedRideForCancel;
     
     try {
-      console.log('Attempting to cancel ride:', rideId); // Debug log
+      console.log('Attempting to cancel ride:', rideId);
       
       const response = await axios.post(`${API}/rider/cancel-ride`, {
         ride_id: rideId,
         reason: reason
       });
       
-      console.log('Cancel ride response:', response.data); // Debug log
-      alert('Ride cancelled successfully');
-      fetchCurrentRides(); // Refresh the rides list
+      console.log('Cancel ride response:', response.data);
+      alert('✅ Ride cancelled successfully! You will receive a confirmation shortly.');
+      fetchCurrentRides();
       
       // Close modal
       setShowCancelModal(false);
@@ -1599,7 +1599,7 @@ const RiderDashboard = () => {
     } catch (error) {
       console.error('Error cancelling ride:', error);
       const errorMessage = error.response?.data?.detail || error.message || 'Unknown error';
-      alert('Failed to cancel ride: ' + errorMessage);
+      alert('❌ Failed to cancel ride: ' + errorMessage);
     }
   };
 
