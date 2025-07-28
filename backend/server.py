@@ -321,17 +321,26 @@ def validate_phone_number(phone: str) -> str:
     # Remove all non-digit characters except +
     clean_phone = re.sub(r'[^\d+]', '', phone)
     
+    # Basic validation - must have some digits
+    if not re.search(r'\d', clean_phone):
+        raise ValueError("Invalid phone number format")
+    
     # If doesn't start with +, assume it's Indian number
     if not clean_phone.startswith('+'):
-        if clean_phone.startswith('91'):
+        if clean_phone.startswith('91') and len(clean_phone) == 12:
             clean_phone = '+' + clean_phone
         elif len(clean_phone) == 10:
             clean_phone = '+91' + clean_phone
         else:
-            clean_phone = '+91' + clean_phone
+            # Invalid format for auto-formatting
+            raise ValueError("Invalid phone number format")
     
-    # Validate the format
+    # Validate the format - must be E.164 format
     if not re.match(r'^\+[1-9]\d{1,14}$', clean_phone):
+        raise ValueError("Invalid phone number format")
+    
+    # Additional validation - minimum length check
+    if len(clean_phone) < 8:  # Minimum reasonable phone number length
         raise ValueError("Invalid phone number format")
     
     return clean_phone
