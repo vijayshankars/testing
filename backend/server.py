@@ -363,7 +363,7 @@ async def get_available_drivers(
     drivers = await db.driver_profiles.find({
         "is_available": True,
         "current_location": {"$exists": True, "$ne": None}
-    }).to_list(100)
+    }, {"_id": 0}).to_list(100)
     
     nearby_drivers = []
     rider_location = {"lat": lat, "lng": lng}
@@ -372,7 +372,7 @@ async def get_available_drivers(
         if driver.get("current_location"):
             distance = calculate_distance(rider_location, driver["current_location"])
             if distance <= 10:  # Within 10km
-                driver_user = await db.users.find_one({"id": driver["user_id"]})
+                driver_user = await db.users.find_one({"id": driver["user_id"]}, {"_id": 0})
                 if driver_user:
                     nearby_drivers.append({
                         "driver_id": driver["user_id"],
