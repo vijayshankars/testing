@@ -1964,54 +1964,101 @@ const RiderDashboard = () => {
                   </div>
                 ) : (
                   rideHistory.map((ride) => (
-                    <div key={ride.id} className="border border-gray-200 rounded-lg p-4">
-                      <div className="flex justify-between items-start mb-2">
+                    <div key={ride.id} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
+                      <div className="flex justify-between items-start mb-4">
                         <div className="flex-1">
                           {/* Enhanced Route Display */}
-                          <div className="flex items-center mb-3">
-                            <div className="flex items-center bg-green-50 rounded-lg px-3 py-2 flex-1 mr-2">
-                              <MapPin className="w-4 h-4 text-green-600 mr-2 flex-shrink-0" />
-                              <span className="text-sm font-medium text-green-800 truncate">
-                                {ride.pickup_location?.address || 'Pickup location'}
-                              </span>
+                          <div className="flex items-center mb-4">
+                            <div className="flex items-center bg-green-50 rounded-lg px-4 py-3 flex-1 mr-3">
+                              <MapPin className="w-5 h-5 text-green-600 mr-3 flex-shrink-0" />
+                              <div className="flex-1">
+                                <div className="text-xs font-medium text-green-600 uppercase tracking-wide">FROM</div>
+                                <span className="text-sm font-medium text-green-800">
+                                  {ride.pickup_location?.address || 'Pickup location'}
+                                </span>
+                              </div>
                             </div>
-                            <Navigation className="w-4 h-4 text-gray-400 mx-1 flex-shrink-0" />
-                            <div className="flex items-center bg-red-50 rounded-lg px-3 py-2 flex-1 ml-2">
-                              <Navigation className="w-4 h-4 text-red-600 mr-2 flex-shrink-0" />
-                              <span className="text-sm font-medium text-red-800 truncate">
-                                {ride.drop_location?.address || 'Drop location'}
-                              </span>
+                            <Navigation className="w-5 h-5 text-gray-400 mx-2 flex-shrink-0" />
+                            <div className="flex items-center bg-red-50 rounded-lg px-4 py-3 flex-1 ml-3">
+                              <Navigation className="w-5 h-5 text-red-600 mr-3 flex-shrink-0" />
+                              <div className="flex-1">
+                                <div className="text-xs font-medium text-red-600 uppercase tracking-wide">TO</div>
+                                <span className="text-sm font-medium text-red-800">
+                                  {ride.drop_location?.address || 'Drop location'}
+                                </span>
+                              </div>
                             </div>
                           </div>
-                          {/* Traditional text format */}
-                          <div className="font-medium mb-1 text-gray-600 text-sm">
-                            {ride.pickup_location?.address} → {ride.drop_location?.address}
+
+                          {/* Ride Details Grid */}
+                          <div className="grid grid-cols-3 gap-4 mb-4">
+                            <div className="bg-gray-50 rounded-lg p-3 text-center">
+                              <div className="text-lg font-bold text-green-600 flex items-center justify-center">
+                                <IndianRupee className="w-4 h-4 mr-1" />
+                                {ride.estimated_fare}
+                              </div>
+                              <div className="text-xs text-gray-500 mt-1">Total Fare</div>
+                            </div>
+                            <div className="bg-gray-50 rounded-lg p-3 text-center">
+                              <div className="text-lg font-bold text-blue-600">
+                                {ride.estimated_distance.toFixed(1)} km
+                              </div>
+                              <div className="text-xs text-gray-500 mt-1">Distance</div>
+                            </div>
+                            <div className="bg-gray-50 rounded-lg p-3 text-center">
+                              <div className="text-sm font-medium text-gray-700">
+                                {new Date(ride.created_at).toLocaleDateString()}
+                              </div>
+                              <div className="text-xs text-gray-500 mt-1">Date</div>
+                            </div>
                           </div>
-                          <div className="text-sm text-gray-600 mb-2 flex items-center">
-                            <IndianRupee className="w-3 h-3 mr-1" />
-                            {ride.estimated_fare} • {ride.estimated_distance.toFixed(1)} km
-                          </div>
+
+                          {/* Driver Info */}
                           {ride.driver_info && (
-                            <div className="text-sm text-gray-600">
-                              Driver: {ride.driver_info.name} • {ride.driver_info.vehicle_type} ({ride.driver_info.vehicle_number})
+                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                              <h4 className="font-medium text-blue-900 mb-2">Driver Details</h4>
+                              <div className="grid grid-cols-2 gap-3 text-sm">
+                                <div className="flex items-center">
+                                  <User className="w-4 h-4 text-blue-600 mr-2" />
+                                  <span className="text-blue-800">{ride.driver_info.name}</span>
+                                </div>
+                                <div className="flex items-center">
+                                  <Phone className="w-4 h-4 text-blue-600 mr-2" />
+                                  <span className="text-blue-800">{ride.driver_info.phone}</span>
+                                </div>
+                                <div className="flex items-center">
+                                  <Car className="w-4 h-4 text-blue-600 mr-2" />
+                                  <span className="text-blue-800">{ride.driver_info.vehicle_type}</span>
+                                </div>
+                                <div className="flex items-center">
+                                  <span className="text-blue-600 mr-2">#</span>
+                                  <span className="text-blue-800 font-mono">{ride.driver_info.vehicle_number}</span>
+                                </div>
+                              </div>
                             </div>
                           )}
+
+                          {/* Cancellation Reason */}
                           {ride.cancellation_reason && (
-                            <div className="text-sm text-red-600 mt-1">
-                              Reason: {ride.cancellation_reason}
+                            <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                              <div className="flex items-center text-red-700">
+                                <XCircle className="w-4 h-4 mr-2" />
+                                <span className="text-sm font-medium">Cancellation Reason: {ride.cancellation_reason}</span>
+                              </div>
                             </div>
                           )}
                         </div>
-                        <div className="text-right">
-                          <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
+                        
+                        <div className="text-right ml-4">
+                          <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${
                             ride.status === 'completed' ? 'bg-green-100 text-green-800' :
                             ride.status === 'cancelled' ? 'bg-red-100 text-red-800' :
                             ride.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
                             'bg-gray-100 text-gray-800'
                           }`}>
-                            {ride.status.replace('_', ' ')}
+                            {ride.status.replace('_', ' ').toUpperCase()}
                           </span>
-                          <div className="text-xs text-gray-500 mt-1">
+                          <div className="text-xs text-gray-500 mt-2">
                             {new Date(ride.created_at).toLocaleString()}
                           </div>
                         </div>
