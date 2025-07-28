@@ -967,86 +967,122 @@ const RiderDashboard = () => {
     }
   };
 
-  const handleLocationSelect = (locationType, address) => {
-    if (locationType === 'pickup') {
-      setPickupLocation(address);
+  const handleLocationSelect = async (locationType, prediction) => {
+    if (!mapInstance || !window.google) return;
+
+    try {
+      // If it's a string (legacy), handle as before
+      if (typeof prediction === 'string') {
+        if (locationType === 'pickup') {
+          setPickupLocation(prediction);
+        } else {
+          setDropLocation(prediction);
+        }
+        
+        // Try to search using Places API
+        const service = new window.google.maps.places.PlacesService(mapInstance);
+        const request = {
+          query: prediction,
+          fields: ['place_id', 'name', 'geometry', 'formatted_address']
+        };
+        
+        service.textSearch(request, (results, status) => {
+          if (status === window.google.maps.places.PlacesServiceStatus.OK && results[0]) {
+            addMarkerForLocation(locationType, results[0], prediction);
+          }
+        });
+        return;
+      }
+
+      // Handle Google Places prediction object
+      const placesService = new window.google.maps.places.PlacesService(mapInstance);
       
+      const request = {
+        placeId: prediction.place_id,
+        fields: ['place_id', 'name', 'geometry', 'formatted_address']
+      };
+
+      placesService.getDetails(request, (place, status) => {
+        if (status === window.google.maps.places.PlacesServiceStatus.OK && place) {
+          const address = place.formatted_address || prediction.description;
+          
+          if (locationType === 'pickup') {
+            setPickupLocation(address);
+          } else {
+            setDropLocation(address);
+          }
+          
+          addMarkerForLocation(locationType, place, address);
+        }
+      });
+    } catch (error) {
+      console.error('Error handling location select:', error);
+    }
+  };
+
+  const addMarkerForLocation = (locationType, place, address) => {
+    const location = place.geometry.location;
+    const latLng = typeof location.lat === 'function' 
+      ? { lat: location.lat(), lng: location.lng() }
+      : location;
+
+    if (locationType === 'pickup') {
       // Clear previous pickup marker
       if (pickupMarker) {
         pickupMarker.setMap(null);
-        setPickupMarker(null);
       }
       
-      // Search and add pickup marker
-      if (mapInstance && window.google && address.trim()) {
-        searchPlaces(address, (results) => {
-          if (results.length > 0) {
-            const place = results[0];
-            const marker = new window.google.maps.Marker({
-              position: place.geometry.location,
-              map: mapInstance,
-              title: `Pickup: ${address}`,
-              icon: {
-                url: 'https://maps.google.com/mapfiles/ms/icons/green-dot.png'
-              }
-            });
-            setPickupMarker(marker);
-            
-            // Center map on pickup location
-            mapInstance.panTo(place.geometry.location);
-            
-            // If drop marker exists, fit both locations
-            if (dropMarker) {
-              const bounds = new window.google.maps.LatLngBounds();
-              bounds.extend(marker.getPosition());
-              bounds.extend(dropMarker.getPosition());
-              mapInstance.fitBounds(bounds);
-              
-              // Auto-calculate fare when both locations are set
-              setTimeout(() => calculateFare(), 1000);
-            }
-          }
-        });
-      }
-    } else if (locationType === 'drop') {
-      setDropLocation(address);
+      const marker = new window.google.maps.Marker({
+        position: latLng,
+        map: mapInstance,
+        title: `Pickup: ${address}`,
+        icon: {
+          url: 'https://maps.google.com/mapfiles/ms/icons/green-dot.png'
+        }
+      });
+      setPickupMarker(marker);
       
+      // Center map on pickup location
+      mapInstance.panTo(latLng);
+      
+      // If drop marker exists, fit both locations
+      if (dropMarker) {
+        const bounds = new window.google.maps.LatLngBounds();
+        bounds.extend(latLng);
+        bounds.extend(dropMarker.getPosition());
+        mapInstance.fitBounds(bounds);
+        
+        // Auto-calculate fare when both locations are set
+        setTimeout(() => calculateFare(), 1000);
+      }
+    } else {
       // Clear previous drop marker
       if (dropMarker) {
         dropMarker.setMap(null);
-        setDropMarker(null);
       }
       
-      // Search and add drop marker
-      if (mapInstance && window.google && address.trim()) {
-        searchPlaces(address, (results) => {
-          if (results.length > 0) {
-            const place = results[0];
-            const marker = new window.google.maps.Marker({
-              position: place.geometry.location,
-              map: mapInstance,
-              title: `Drop: ${address}`,
-              icon: {
-                url: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png'
-              }
-            });
-            setDropMarker(marker);
-            
-            // If pickup marker exists, fit both locations
-            if (pickupMarker) {
-              const bounds = new window.google.maps.LatLngBounds();
-              bounds.extend(pickupMarker.getPosition());
-              bounds.extend(marker.getPosition());
-              mapInstance.fitBounds(bounds);
-              
-              // Auto-calculate fare when both locations are set
-              setTimeout(() => calculateFare(), 1000);
-            } else {
-              // Just center on drop location
-              mapInstance.panTo(place.geometry.location);
-            }
-          }
-        });
+      const marker = new window.google.maps.Marker({
+        position: latLng,
+        map: mapInstance,
+        title: `Drop: ${address}`,
+        icon: {
+          url: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png'
+        }
+      });
+      setDropMarker(marker);
+      
+      // If pickup marker exists, fit both locations
+      if (pickupMarker) {
+        const bounds = new window.google.maps.LatLngBounds();
+        bounds.extend(pickupMarker.getPosition());
+        bounds.extend(latLng);
+        mapInstance.fitBounds(bounds);
+        
+        // Auto-calculate fare when both locations are set
+        setTimeout(() => calculateFare(), 1000);
+      } else {
+        // Just center on drop location
+        mapInstance.panTo(latLng);
       }
     }
   };
