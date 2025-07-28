@@ -2260,7 +2260,7 @@ const MobileOTPAuth = ({ onSuccess }) => {
           {/* User Type Selection */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-3">I am a</label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               <button
                 type="button"
                 className={`p-4 rounded-lg border-2 transition-all ${
@@ -2284,6 +2284,18 @@ const MobileOTPAuth = ({ onSuccess }) => {
               >
                 <Car className="w-6 h-6 mx-auto mb-2" />
                 <span className="font-medium">Driver</span>
+              </button>
+              <button
+                type="button"
+                className={`p-4 rounded-lg border-2 transition-all ${
+                  userType === 'admin'
+                    ? 'border-blue-500 bg-blue-50 text-blue-600'
+                    : 'border-gray-300 text-gray-600 hover:border-gray-400'
+                }`}
+                onClick={() => setUserType('admin')}
+              >
+                <Settings className="w-6 h-6 mx-auto mb-2" />
+                <span className="font-medium">Admin</span>
               </button>
             </div>
           </div>
