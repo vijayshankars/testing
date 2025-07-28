@@ -2125,12 +2125,12 @@ const MobileOTPAuth = ({ onSuccess }) => {
   const [demoOtp, setDemoOtp] = useState('');
   const [resendTimer, setResendTimer] = useState(0);
 
-  // Auto-format phone number
+  // Auto-format phone number for Indian/Chennai numbers
   const formatPhoneNumber = (value) => {
     // Remove all non-digit characters
     const numbers = value.replace(/\D/g, '');
     
-    // Auto-add +91 for Indian numbers
+    // Auto-add +91 for Indian numbers (including Chennai)
     if (numbers.length <= 10 && !value.startsWith('+')) {
       return numbers.length > 0 ? `+91 ${numbers}` : '';
     }
