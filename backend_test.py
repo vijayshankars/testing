@@ -602,7 +602,7 @@ def test_razorpay_webhook(result: TestResult):
     print("9. RAZORPAY WEBHOOK TESTING")
     print(f"{'='*60}")
     
-    # Test webhook with mock payload
+    # Test webhook with mock payload and correct signature
     try:
         import hmac
         import hashlib
@@ -623,7 +623,7 @@ def test_razorpay_webhook(result: TestResult):
         
         payload_json = json.dumps(mock_payload)
         
-        # Create mock signature using demo webhook secret
+        # Create correct signature using demo webhook secret
         webhook_secret = "demo_webhook_secret"
         signature = hmac.new(
             webhook_secret.encode(),
@@ -679,7 +679,11 @@ def test_razorpay_webhook(result: TestResult):
         )
         
         if response.status_code == 400:
-            result.log_success("POST /api/webhook/razorpay - Invalid signature rejection")
+            data = response.json()
+            if "signature" in data.get("detail", "").lower():
+                result.log_success("POST /api/webhook/razorpay - Invalid signature rejection")
+            else:
+                result.log_failure("POST /api/webhook/razorpay", f"Unexpected error message: {data}")
         else:
             result.log_failure("POST /api/webhook/razorpay", f"Expected 400 for invalid signature, got {response.status_code}")
             
