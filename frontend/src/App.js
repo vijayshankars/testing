@@ -86,6 +86,7 @@ const useGoogleMaps = () => {
   const [directionsService, setDirectionsService] = useState(null);
   const [directionsRenderer, setDirectionsRenderer] = useState(null);
   const [loaded, setLoaded] = useState(false);
+  const [placesService, setPlacesService] = useState(null);
 
   useEffect(() => {
     const initializeMap = async () => {
@@ -112,7 +113,7 @@ const useGoogleMaps = () => {
   }, []);
 
   const initMap = (element, options = {}) => {
-    if (!loaded || !window.google) return null;
+    if (!loaded || !window.google || !element) return null;
 
     const defaultOptions = {
       zoom: 13,
@@ -120,6 +121,7 @@ const useGoogleMaps = () => {
       mapTypeControl: false,
       streetViewControl: false,
       fullscreenControl: false,
+      zoomControl: true,
       ...options
     };
 
@@ -128,6 +130,11 @@ const useGoogleMaps = () => {
     
     if (directionsRenderer) {
       directionsRenderer.setMap(newMap);
+    }
+
+    // Initialize places service
+    if (window.google.maps.places) {
+      setPlacesService(new window.google.maps.places.PlacesService(newMap));
     }
     
     return newMap;
@@ -162,10 +169,34 @@ const useGoogleMaps = () => {
               lng: position.coords.longitude
             });
           },
-          (error) => reject(error)
+          (error) => {
+            console.error('Geolocation error:', error);
+            // Fallback to Delhi coordinates
+            resolve({ lat: 28.6139, lng: 77.2090 });
+          }
         );
       } else {
-        reject('Geolocation not supported');
+        console.error('Geolocation not supported');
+        // Fallback to Delhi coordinates
+        resolve({ lat: 28.6139, lng: 77.2090 });
+      }
+    });
+  };
+
+  const searchPlaces = (query, callback) => {
+    if (!placesService || !map) return;
+
+    const request = {
+      query: query,
+      location: map.getCenter(),
+      radius: 50000, // 50km radius
+    };
+
+    placesService.textSearch(request, (results, status) => {
+      if (status === window.google.maps.places.PlacesServiceStatus.OK && results) {
+        callback(results);
+      } else {
+        callback([]);
       }
     });
   };
@@ -175,6 +206,7 @@ const useGoogleMaps = () => {
     initMap, 
     calculateRoute, 
     getUserLocation, 
+    searchPlaces,
     map, 
     directionsService, 
     directionsRenderer 
