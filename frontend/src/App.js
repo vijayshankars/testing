@@ -1299,6 +1299,101 @@ const DriverDashboard = () => {
           </div>
         </div>
       </div>
+      
+      {/* OTP Verification Modal */}
+      {selectedRideForOTP && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-2xl w-full max-w-md">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold text-gray-900 flex items-center">
+                  <CheckCircle className="w-6 h-6 text-green-600 mr-2" />
+                  Verify Ride OTP
+                </h2>
+                <button
+                  onClick={() => {
+                    setSelectedRideForOTP(null);
+                    setOtpInput('');
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <XCircle className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-blue-600 mb-2">
+                      Your OTP: {selectedRideForOTP.ride_otp}
+                    </div>
+                    <p className="text-sm text-blue-700">
+                      📱 Share this code with the rider
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="font-medium text-gray-900 mb-2">Ride Details:</h3>
+                  <div className="space-y-1 text-sm text-gray-700">
+                    <div><strong>From:</strong> {selectedRideForOTP.pickup_location?.address}</div>
+                    <div><strong>To:</strong> {selectedRideForOTP.drop_location?.address}</div>
+                    <div><strong>Fare:</strong> ₹{selectedRideForOTP.estimated_fare}</div>
+                    <div><strong>Distance:</strong> {selectedRideForOTP.estimated_distance?.toFixed(1)} km</div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Enter OTP from Rider to Start Ride:
+                  </label>
+                  <input
+                    type="text"
+                    value={otpInput}
+                    onChange={(e) => setOtpInput(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                    placeholder="Enter 4-digit OTP"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center text-2xl font-mono tracking-widest"
+                    maxLength="4"
+                    autoFocus
+                  />
+                  <p className="text-xs text-gray-500 mt-1 text-center">
+                    Ask the rider to share the OTP displayed on their phone
+                  </p>
+                </div>
+
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                  <div className="flex items-start">
+                    <span className="text-yellow-600 mr-2">⚠️</span>
+                    <div className="text-sm text-yellow-800">
+                      <strong>Important:</strong> Only start the ride after the rider enters your vehicle and shares the correct OTP with you.
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => {
+                      setSelectedRideForOTP(null);
+                      setOtpInput('');
+                    }}
+                    className="flex-1 bg-gray-200 text-gray-800 py-3 px-4 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => verifyRideOTP(selectedRideForOTP.id, otpInput)}
+                    disabled={otpInput.length !== 4}
+                    className="flex-1 bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+                  >
+                    Start Ride
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
