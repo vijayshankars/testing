@@ -117,7 +117,7 @@ const useGoogleMaps = () => {
 
     const defaultOptions = {
       zoom: 13,
-      center: { lat: 28.6139, lng: 77.2090 }, // Default to Delhi
+      center: { lat: 13.0827, lng: 80.2707 }, // Default to Chennai
       mapTypeControl: false,
       streetViewControl: false,
       fullscreenControl: false,
