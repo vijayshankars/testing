@@ -1080,6 +1080,155 @@ async def razorpay_webhook(request: Request):
         logger.error(f"Webhook processing error: {e}")
         raise HTTPException(status_code=500, detail="Webhook processing failed")
 
+# Admin Routes
+@api_router.get("/admin/dashboard", response_model=AdminDashboardData)
+async def get_admin_dashboard(current_user: dict = Depends(get_current_user)):
+    if current_user.get("user_type") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Get statistics
+    total_users = await db.users.count_documents({})
+    total_drivers = await db.users.count_documents({"user_type": "driver"})
+    total_riders = await db.users.count_documents({"user_type": "rider"})
+    total_rides = await db.ride_requests.count_documents({})
+    active_rides = await db.ride_requests.count_documents({"status": {"$in": ["requested", "accepted", "in_progress"]}})
+    pending_verifications = await db.driver_profiles.count_documents({"document_verified": False})
+    
+    # Get recent users
+    recent_users_cursor = db.users.find({}).sort("created_at", -1).limit(10)
+    recent_users = await recent_users_cursor.to_list(10)
+    
+    # Get recent rides
+    recent_rides_cursor = db.ride_requests.find({}).sort("created_at", -1).limit(10)
+    recent_rides = await recent_rides_cursor.to_list(10)
+    
+    # Clean data for response
+    for user in recent_users:
+        user.pop("password", None)
+        user.pop("_id", None)
+    
+    for ride in recent_rides:
+        ride.pop("_id", None)
+    
+    return AdminDashboardData(
+        total_users=total_users,
+        total_drivers=total_drivers,
+        total_riders=total_riders,
+        total_rides=total_rides,
+        active_rides=active_rides,
+        pending_verifications=pending_verifications,
+        recent_users=recent_users,
+        recent_rides=recent_rides
+    )
+
+@api_router.get("/admin/users")
+async def get_all_users(
+    user_type: Optional[str] = None,
+    skip: int = 0,
+    limit: int = 50,
+    current_user: dict = Depends(get_current_user)
+):
+    if current_user.get("user_type") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    query = {}
+    if user_type:
+        query["user_type"] = user_type
+    
+    users_cursor = db.users.find(query, {"password": 0}).skip(skip).limit(limit)
+    users = await users_cursor.to_list(limit)
+    
+    # Add driver profile info for drivers
+    for user in users:
+        user.pop("_id", None)
+        if user["user_type"] == "driver":
+            driver_profile = await db.driver_profiles.find_one({"user_id": user["id"]})
+            if driver_profile:
+                driver_profile.pop("_id", None)
+                # Remove document data for privacy
+                if driver_profile.get("license_document"):
+                    driver_profile["license_document"] = {
+                        k: v for k, v in driver_profile["license_document"].items() 
+                        if k != "data"
+                    }
+                if driver_profile.get("registration_document"):
+                    driver_profile["registration_document"] = {
+                        k: v for k, v in driver_profile["registration_document"].items() 
+                        if k != "data"
+                    }
+                user["driver_profile"] = driver_profile
+    
+    return {"users": users, "total": await db.users.count_documents(query)}
+
+@api_router.post("/admin/user-action")
+async def admin_user_action(
+    action_data: UserManagementAction,
+    current_user: dict = Depends(get_current_user)
+):
+    if current_user.get("user_type") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    user = await db.users.find_one({"id": action_data.user_id})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    if action_data.action == "activate":
+        await db.users.update_one(
+            {"id": action_data.user_id},
+            {"$set": {"is_active": True}}
+        )
+        return {"message": "User activated successfully"}
+    
+    elif action_data.action == "deactivate":
+        await db.users.update_one(
+            {"id": action_data.user_id},
+            {"$set": {"is_active": False}}
+        )
+        return {"message": "User deactivated successfully"}
+    
+    elif action_data.action == "verify_driver":
+        if user["user_type"] != "driver":
+            raise HTTPException(status_code=400, detail="User is not a driver")
+        
+        await db.driver_profiles.update_one(
+            {"user_id": action_data.user_id},
+            {"$set": {"document_verified": True}}
+        )
+        return {"message": "Driver verified successfully"}
+    
+    elif action_data.action == "reject_driver":
+        if user["user_type"] != "driver":
+            raise HTTPException(status_code=400, detail="User is not a driver")
+        
+        await db.driver_profiles.update_one(
+            {"user_id": action_data.user_id},
+            {"$set": {"document_verified": False}}
+        )
+        return {"message": "Driver verification rejected"}
+    
+    else:
+        raise HTTPException(status_code=400, detail="Invalid action")
+
+@api_router.get("/admin/driver-documents/{user_id}")
+async def get_driver_documents(
+    user_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    if current_user.get("user_type") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    driver_profile = await db.driver_profiles.find_one({"user_id": user_id})
+    if not driver_profile:
+        raise HTTPException(status_code=404, detail="Driver profile not found")
+    
+    documents = {}
+    if driver_profile.get("license_document"):
+        documents["license_document"] = driver_profile["license_document"]
+    if driver_profile.get("registration_document"):
+        documents["registration_document"] = driver_profile["registration_document"]
+    
+    return documents
+
 # General Routes
 @api_router.get("/")
 async def root():
