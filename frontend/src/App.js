@@ -1163,6 +1163,7 @@ const DriverDashboard = () => {
               )}
             </div>
             
+        </div>
       </div>
 
       {/* Cancel Confirmation Modal */}
