@@ -1913,35 +1913,10 @@ const RiderDashboard = () => {
               ) : (
                 <div className="space-y-3">
                   {currentRides.slice(0, 3).map((ride) => (
-                    <div key={ride.id} className="border border-gray-200 rounded-lg p-3">
-                      <div className="flex justify-between items-start mb-2">
-                        <div className="flex-1">
-                          {/* Route Display with Icons */}
-                          <div className="flex items-center mb-2">
-                            <div className="flex items-center bg-green-50 rounded-lg px-3 py-2 flex-1">
-                              <MapPin className="w-4 h-4 text-green-600 mr-2 flex-shrink-0" />
-                              <span className="text-sm font-medium text-green-800 truncate">
-                                {ride.pickup_location?.address || 'Pickup location'}
-                              </span>
-                            </div>
-                            <Navigation className="w-4 h-4 text-gray-400 mx-2 flex-shrink-0" />
-                            <div className="flex items-center bg-red-50 rounded-lg px-3 py-2 flex-1">
-                              <Navigation className="w-4 h-4 text-red-600 mr-2 flex-shrink-0" />
-                              <span className="text-sm font-medium text-red-800 truncate">
-                                {ride.drop_location?.address || 'Drop location'}
-                              </span>
-                            </div>
-                          </div>
-                          {/* Traditional Format as backup */}
-                          <div className="font-medium mb-1 text-gray-700 text-sm">
-                            {ride.pickup_location?.address} → {ride.drop_location?.address}
-                          </div>
-                          <div className="text-sm text-gray-600 flex items-center">
-                            <IndianRupee className="w-3 h-3 mr-1" />
-                            {ride.estimated_fare} • {ride.estimated_distance.toFixed(1)} km
-                          </div>
-                        </div>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    <div key={ride.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                      {/* Ride Status and Fare */}
+                      <div className="flex justify-between items-center mb-3">
+                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${
                           ride.status === 'requested' ? 'bg-yellow-100 text-yellow-800' :
                           ride.status === 'accepted' ? 'bg-blue-100 text-blue-800' :
                           ride.status === 'in_progress' ? 'bg-purple-100 text-purple-800' :
@@ -1949,11 +1924,18 @@ const RiderDashboard = () => {
                         }`}>
                           {ride.status.replace('_', ' ')}
                         </span>
+                        <div className="text-right">
+                          <div className="text-lg font-bold text-green-600 flex items-center">
+                            <IndianRupee className="w-4 h-4 mr-1" />
+                            {ride.estimated_fare}
+                          </div>
+                          <div className="text-sm text-gray-500">{ride.estimated_distance.toFixed(1)} km</div>
+                        </div>
                       </div>
 
                       {/* Show ride OTP for accepted rides */}
                       {ride.status === 'accepted' && ride.ride_otp && (
-                        <div className="bg-green-50 border border-green-200 rounded p-3 mb-3">
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-3">
                           <div className="flex items-center justify-between">
                             <span className="text-sm font-medium text-green-800">Ride OTP:</span>
                             <span className="text-2xl font-bold text-green-600 font-mono">
@@ -1967,21 +1949,26 @@ const RiderDashboard = () => {
                       )}
                       
                       {ride.driver_info && (
-                        <div className="text-sm text-gray-600 border-t pt-2 mt-2">
-                          <div>Driver: {ride.driver_info.name}</div>
-                          <div>Vehicle: {ride.driver_info.vehicle_type} ({ride.driver_info.vehicle_number})</div>
-                          <div>Phone: {ride.driver_info.phone}</div>
+                        <div className="bg-gray-50 rounded-lg p-3 mb-3">
+                          <h4 className="font-medium text-gray-900 mb-2">Driver Details</h4>
+                          <div className="grid grid-cols-2 gap-2 text-sm text-gray-600">
+                            <div>Name: {ride.driver_info.name}</div>
+                            <div>Phone: {ride.driver_info.phone}</div>
+                            <div>Vehicle: {ride.driver_info.vehicle_type}</div>
+                            <div>Number: {ride.driver_info.vehicle_number}</div>
+                          </div>
                         </div>
                       )}
 
                       {/* Action buttons */}
-                      <div className="border-t pt-3 mt-3 space-y-2">
+                      <div className="space-y-2 mb-4">
                         {/* Cancel button for requested/accepted rides */}
                         {(ride.status === 'requested' || ride.status === 'accepted') && (
                           <button
                             onClick={() => cancelRide(ride.id)}
-                            className="w-full bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors"
+                            className="w-full bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors flex items-center justify-center"
                           >
+                            <XCircle className="w-4 h-4 mr-2" />
                             Cancel Ride
                           </button>
                         )}
@@ -1999,11 +1986,47 @@ const RiderDashboard = () => {
 
                         {/* Payment status for paid rides */}
                         {ride.payment_status === 'paid' && (
-                          <div className="flex items-center text-green-600 text-sm">
+                          <div className="flex items-center justify-center text-green-600 text-sm bg-green-50 py-2 rounded-lg">
                             <CheckCircle className="w-4 h-4 mr-2" />
                             Payment Completed
                           </div>
                         )}
+                      </div>
+
+                      {/* From and To Section at the bottom */}
+                      <div className="border-t pt-3">
+                        <div className="space-y-3">
+                          {/* From Section */}
+                          <div className="flex items-start">
+                            <div className="flex-shrink-0 w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                              <MapPin className="w-6 h-6 text-green-600" />
+                            </div>
+                            <div className="flex-1">
+                              <div className="text-xs font-medium text-green-600 uppercase tracking-wide mb-1">FROM</div>
+                              <div className="text-sm font-medium text-gray-900 leading-tight">
+                                {ride.pickup_location?.address || 'Pickup location'}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Divider Line */}
+                          <div className="flex items-center ml-6">
+                            <div className="w-px h-6 bg-gray-300"></div>
+                          </div>
+
+                          {/* To Section */}
+                          <div className="flex items-start">
+                            <div className="flex-shrink-0 w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mr-3">
+                              <Navigation className="w-6 h-6 text-red-600" />
+                            </div>
+                            <div className="flex-1">
+                              <div className="text-xs font-medium text-red-600 uppercase tracking-wide mb-1">TO</div>
+                              <div className="text-sm font-medium text-gray-900 leading-tight">
+                                {ride.drop_location?.address || 'Drop location'}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   ))}
