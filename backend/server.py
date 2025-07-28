@@ -113,6 +113,8 @@ class DriverProfileCreate(BaseModel):
     vehicle_type: str
     vehicle_number: str
     license_number: str
+    license_document: Optional[Dict[str, Any]] = None
+    registration_document: Optional[Dict[str, Any]] = None
 
 class DriverLocationUpdate(BaseModel):
     lat: float
