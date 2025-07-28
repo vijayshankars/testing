@@ -1126,6 +1126,7 @@ async def request_ride(
     
     # Create ride request
     ride_dict = {
+        "id": str(uuid.uuid4()),  # Add UUID for ride
         "rider_id": current_user["id"],
         "pickup_location": ride_data.pickup_location,
         "drop_location": ride_data.drop_location,
@@ -1142,7 +1143,6 @@ async def request_ride(
     }
     
     result = await db.rides.insert_one(ride_dict)
-    ride_dict["id"] = str(result.inserted_id)
     
     # Store discount usage if discount was applied
     if discount_applied:
@@ -1155,6 +1155,8 @@ async def request_ride(
         }
         await db.discount_usage.insert_one(usage_record)
     
+    # Remove MongoDB _id from response
+    ride_dict.pop("_id", None)
     return ride_dict
 
 @api_router.post("/rider/apply-discount")
