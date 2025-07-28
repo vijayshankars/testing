@@ -3522,16 +3522,44 @@ const AdminDashboard = () => {
     }
   };
 
-  const fetchUsers = async (userType = null) => {
+  const fetchUsers = async (userType = null, searchMobile = null) => {
     try {
-      const params = userType && userType !== 'all' ? `?user_type=${userType}` : '';
-      const response = await axios.get(`${API}/admin/users${params}`);
+      setIsSearching(true);
+      const params = new URLSearchParams();
+      
+      if (userType && userType !== 'all') {
+        params.append('user_type', userType);
+      }
+      
+      if (searchMobile && searchMobile.trim()) {
+        params.append('mobile_search', searchMobile.trim());
+      }
+      
+      const queryString = params.toString();
+      const url = `${API}/admin/users${queryString ? `?${queryString}` : ''}`;
+      
+      const response = await axios.get(url);
       setUsers(response.data.users);
     } catch (error) {
       console.error('Error fetching users:', error);
+      alert('Error fetching users. Please try again.');
     } finally {
       setLoading(false);
+      setIsSearching(false);
     }
+  };
+
+  const handleMobileSearch = async () => {
+    if (mobileSearch.trim().length < 3) {
+      alert('Please enter at least 3 digits to search');
+      return;
+    }
+    await fetchUsers(selectedUserType === 'all' ? null : selectedUserType, mobileSearch);
+  };
+
+  const clearSearch = async () => {
+    setMobileSearch('');
+    await fetchUsers(selectedUserType === 'all' ? null : selectedUserType, null);
   };
 
   const handleUserAction = async (userId, action) => {
