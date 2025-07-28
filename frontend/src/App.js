@@ -914,8 +914,9 @@ const RiderDashboard = () => {
                           <div className="font-medium mb-1">
                             {ride.pickup_location.address} → {ride.drop_location.address}
                           </div>
-                          <div className="text-sm text-gray-600">
-                            ₹{ride.estimated_fare} • {ride.estimated_distance.toFixed(1)} km
+                          <div className="text-sm text-gray-600 flex items-center">
+                            <IndianRupee className="w-3 h-3 mr-1" />
+                            {ride.estimated_fare} • {ride.estimated_distance.toFixed(1)} km
                           </div>
                         </div>
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -933,6 +934,29 @@ const RiderDashboard = () => {
                           <div>Driver: {ride.driver_info.name}</div>
                           <div>Vehicle: {ride.driver_info.vehicle_type} ({ride.driver_info.vehicle_number})</div>
                           <div>Phone: {ride.driver_info.phone}</div>
+                        </div>
+                      )}
+
+                      {/* Payment button for accepted rides */}
+                      {ride.status === 'accepted' && ride.driver_info && (
+                        <div className="border-t pt-3 mt-3">
+                          <button
+                            onClick={() => handlePayNow(ride)}
+                            className="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center"
+                          >
+                            <Smartphone className="w-4 h-4 mr-2" />
+                            Pay Now with UPI
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Payment status for paid rides */}
+                      {ride.payment_status === 'paid' && (
+                        <div className="border-t pt-3 mt-3">
+                          <div className="flex items-center text-green-600 text-sm">
+                            <CheckCircle className="w-4 h-4 mr-2" />
+                            Payment Completed
+                          </div>
                         </div>
                       )}
                     </div>
