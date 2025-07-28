@@ -1124,62 +1124,24 @@ const RiderDashboard = () => {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Pickup Location</label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      placeholder="Enter pickup location"
-                      value={pickupLocation}
-                      onChange={(e) => handleLocationSelect('pickup', e.target.value)}
-                    />
-                    <button
-                      type="button"
-                      onClick={useCurrentLocation}
-                      className="absolute right-2 top-2 text-blue-600 hover:text-blue-800"
-                      title="Use current location"
-                    >
-                      <Navigation className="w-5 h-5" />
-                    </button>
-                  </div>
-                  
-                  {/* Quick pickup suggestions */}
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {['Airport', 'Railway Station', 'Bus Stand', 'Mall'].map((place) => (
-                      <button
-                        key={place}
-                        type="button"
-                        onClick={() => handleLocationSelect('pickup', `${place}, Delhi`)}
-                        className="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200 transition-colors"
-                      >
-                        {place}
-                      </button>
-                    ))}
-                  </div>
+                  <LocationAutocomplete
+                    placeholder="Enter pickup location"
+                    value={pickupLocation}
+                    onChange={setPickupLocation}
+                    onLocationSelect={(location) => handleLocationSelect('pickup', location)}
+                    showCurrentLocation={true}
+                    onUseCurrentLocation={useCurrentLocation}
+                  />
                 </div>
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Drop Location</label>
-                  <input
-                    type="text"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  <LocationAutocomplete
                     placeholder="Enter drop location"
                     value={dropLocation}
-                    onChange={(e) => handleLocationSelect('drop', e.target.value)}
+                    onChange={setDropLocation}
+                    onLocationSelect={(location) => handleLocationSelect('drop', location)}
                   />
-                  
-                  {/* Quick drop suggestions */}
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {['Connaught Place', 'India Gate', 'Red Fort', 'Lotus Temple'].map((place) => (
-                      <button
-                        key={place}
-                        type="button"
-                        onClick={() => handleLocationSelect('drop', `${place}, Delhi`)}
-                        className="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200 transition-colors"
-                      >
-                        {place}
-                      </button>
-                    ))}
-                  </div>
                 </div>
                 
                 <div className="grid grid-cols-2 gap-3">
