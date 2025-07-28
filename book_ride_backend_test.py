@@ -109,6 +109,7 @@ def test_rider_authentication(result: TestResult):
             "user_type": "rider",
             "name": "Test Rider Book Ride"
         }
+        print(f"DEBUG: Verifying with OTP: {demo_otp}")
         response = make_request("POST", "/auth/verify-otp", verify_data)
         if response.status_code == 200:
             data = response.json()
