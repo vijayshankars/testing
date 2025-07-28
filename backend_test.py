@@ -489,10 +489,253 @@ def test_error_handling(result: TestResult):
         except Exception as e:
             result.log_failure("Error handling", str(e))
 
+def test_payment_configuration(result: TestResult):
+    """Test payment configuration endpoint"""
+    print(f"\n{'='*60}")
+    print("7. PAYMENT CONFIGURATION TESTING")
+    print(f"{'='*60}")
+    
+    # Test payment config endpoint
+    try:
+        response = make_request("GET", "/payment-config")
+        if response.status_code == 200:
+            data = response.json()
+            if "razorpay_key_id" in data and "razorpay_enabled" in data:
+                if data.get("razorpay_key_id") == "rzp_test_demo123456789" and data.get("razorpay_enabled") is True:
+                    result.log_success("GET /api/payment-config - Razorpay configuration verified")
+                else:
+                    result.log_failure("GET /api/payment-config", f"Invalid Razorpay config: {data}")
+            else:
+                result.log_failure("GET /api/payment-config", f"Missing payment config fields: {data}")
+        else:
+            result.log_failure("GET /api/payment-config", f"Status {response.status_code}: {response.text}")
+    except Exception as e:
+        result.log_failure("GET /api/payment-config", str(e))
+
+def test_razorpay_payment_integration(result: TestResult):
+    """Test Razorpay UPI payment integration"""
+    global rider_token, ride_id
+    
+    print(f"\n{'='*60}")
+    print("8. RAZORPAY UPI PAYMENT INTEGRATION TESTING")
+    print(f"{'='*60}")
+    
+    if not rider_token or not ride_id:
+        result.log_failure("Razorpay payment", "Missing rider token or ride ID")
+        return
+    
+    headers = get_auth_headers(rider_token)
+    razorpay_order_id = None
+    
+    # Test 1: Create Razorpay payment order
+    try:
+        order_data = {"ride_id": ride_id}
+        response = make_request("POST", "/payment/razorpay/create-order", order_data, headers)
+        if response.status_code == 200:
+            data = response.json()
+            required_fields = ["order_id", "amount", "currency", "key_id", "ride_info"]
+            if all(key in data for key in required_fields):
+                razorpay_order_id = data["order_id"]
+                # Verify amount conversion (INR to paise)
+                expected_amount = int(193.75 * 100)  # Convert to paise
+                if data["amount"] == expected_amount and data["currency"] == "INR":
+                    result.log_success("POST /api/payment/razorpay/create-order - Order creation with amount conversion")
+                else:
+                    result.log_failure("POST /api/payment/razorpay/create-order", f"Invalid amount/currency: {data}")
+            else:
+                result.log_failure("POST /api/payment/razorpay/create-order", f"Missing required fields: {data}")
+        else:
+            result.log_failure("POST /api/payment/razorpay/create-order", f"Status {response.status_code}: {response.text}")
+    except Exception as e:
+        result.log_failure("POST /api/payment/razorpay/create-order", str(e))
+    
+    # Test 2: Test payment verification with mock signature
+    if razorpay_order_id:
+        try:
+            # Create mock verification data
+            mock_payment_id = "pay_mock123456789"
+            mock_signature = "mock_signature_for_testing"
+            
+            verification_data = {
+                "razorpay_order_id": razorpay_order_id,
+                "razorpay_payment_id": mock_payment_id,
+                "razorpay_signature": mock_signature
+            }
+            
+            response = make_request("POST", "/payment/razorpay/verify", verification_data, headers)
+            # Note: This will likely fail signature verification, but we're testing the endpoint structure
+            if response.status_code in [200, 400]:  # 200 for success, 400 for invalid signature
+                if response.status_code == 400:
+                    data = response.json()
+                    if "signature" in data.get("detail", "").lower():
+                        result.log_success("POST /api/payment/razorpay/verify - Signature verification endpoint working")
+                    else:
+                        result.log_failure("POST /api/payment/razorpay/verify", f"Unexpected error: {data}")
+                else:
+                    result.log_success("POST /api/payment/razorpay/verify - Payment verification successful")
+            else:
+                result.log_failure("POST /api/payment/razorpay/verify", f"Status {response.status_code}: {response.text}")
+        except Exception as e:
+            result.log_failure("POST /api/payment/razorpay/verify", str(e))
+    
+    # Test 3: Check payment status
+    try:
+        response = make_request("GET", f"/payment/status/{ride_id}", headers=headers)
+        if response.status_code == 200:
+            data = response.json()
+            required_fields = ["payment_id", "status", "payment_status", "amount", "currency"]
+            if all(key in data for key in required_fields):
+                if data["amount"] == 193.75 and data["currency"] == "INR":
+                    result.log_success("GET /api/payment/status/{ride_id} - Payment status retrieval")
+                else:
+                    result.log_failure("GET /api/payment/status/{ride_id}", f"Invalid payment data: {data}")
+            else:
+                result.log_failure("GET /api/payment/status/{ride_id}", f"Missing required fields: {data}")
+        else:
+            result.log_failure("GET /api/payment/status/{ride_id}", f"Status {response.status_code}: {response.text}")
+    except Exception as e:
+        result.log_failure("GET /api/payment/status/{ride_id}", str(e))
+
+def test_razorpay_webhook(result: TestResult):
+    """Test Razorpay webhook processing"""
+    print(f"\n{'='*60}")
+    print("9. RAZORPAY WEBHOOK TESTING")
+    print(f"{'='*60}")
+    
+    # Test webhook with mock payload
+    try:
+        import hmac
+        import hashlib
+        
+        # Create mock webhook payload
+        mock_payload = {
+            "event": "payment.captured",
+            "payload": {
+                "payment": {
+                    "id": "pay_mock123456789",
+                    "order_id": "order_mock123456789",
+                    "amount": 19375,  # 193.75 in paise
+                    "currency": "INR",
+                    "status": "captured"
+                }
+            }
+        }
+        
+        payload_json = json.dumps(mock_payload)
+        
+        # Create mock signature using demo webhook secret
+        webhook_secret = "demo_webhook_secret"
+        signature = hmac.new(
+            webhook_secret.encode(),
+            payload_json.encode(),
+            hashlib.sha256
+        ).hexdigest()
+        
+        headers = {"X-Razorpay-Signature": signature, "Content-Type": "application/json"}
+        
+        # Send webhook request
+        response = requests.post(
+            f"{BASE_URL}/webhook/razorpay",
+            data=payload_json,
+            headers=headers,
+            timeout=TIMEOUT
+        )
+        
+        if response.status_code == 200:
+            data = response.json()
+            if data.get("status") == "processed":
+                result.log_success("POST /api/webhook/razorpay - Webhook processing with signature verification")
+            else:
+                result.log_failure("POST /api/webhook/razorpay", f"Unexpected response: {data}")
+        else:
+            result.log_failure("POST /api/webhook/razorpay", f"Status {response.status_code}: {response.text}")
+            
+    except Exception as e:
+        result.log_failure("POST /api/webhook/razorpay", str(e))
+    
+    # Test webhook with invalid signature
+    try:
+        mock_payload = {
+            "event": "payment.failed",
+            "payload": {
+                "payment": {
+                    "id": "pay_failed123456789",
+                    "order_id": "order_failed123456789",
+                    "amount": 19375,
+                    "currency": "INR",
+                    "status": "failed"
+                }
+            }
+        }
+        
+        payload_json = json.dumps(mock_payload)
+        headers = {"X-Razorpay-Signature": "invalid_signature", "Content-Type": "application/json"}
+        
+        response = requests.post(
+            f"{BASE_URL}/webhook/razorpay",
+            data=payload_json,
+            headers=headers,
+            timeout=TIMEOUT
+        )
+        
+        if response.status_code == 400:
+            result.log_success("POST /api/webhook/razorpay - Invalid signature rejection")
+        else:
+            result.log_failure("POST /api/webhook/razorpay", f"Expected 400 for invalid signature, got {response.status_code}")
+            
+    except Exception as e:
+        result.log_failure("POST /api/webhook/razorpay", str(e))
+
+def test_payment_error_handling(result: TestResult):
+    """Test payment-related error handling"""
+    print(f"\n{'='*60}")
+    print("10. PAYMENT ERROR HANDLING TESTING")
+    print(f"{'='*60}")
+    
+    if not rider_token:
+        result.log_failure("Payment error handling", "No rider token available")
+        return
+    
+    headers = get_auth_headers(rider_token)
+    
+    # Test 1: Create order for invalid ride_id
+    try:
+        invalid_order_data = {"ride_id": "invalid_ride_id"}
+        response = make_request("POST", "/payment/razorpay/create-order", invalid_order_data, headers)
+        if response.status_code == 404:
+            result.log_success("Payment error handling - Invalid ride_id rejection")
+        else:
+            result.log_failure("Payment error handling", f"Expected 404 for invalid ride_id, got {response.status_code}")
+    except Exception as e:
+        result.log_failure("Payment error handling", str(e))
+    
+    # Test 2: Unauthorized access (driver trying to pay for ride)
+    if driver_token:
+        try:
+            driver_headers = get_auth_headers(driver_token)
+            order_data = {"ride_id": ride_id} if ride_id else {"ride_id": "test_ride"}
+            response = make_request("POST", "/payment/razorpay/create-order", order_data, driver_headers)
+            if response.status_code == 403:
+                result.log_success("Payment error handling - Unauthorized payment attempt rejection")
+            else:
+                result.log_failure("Payment error handling", f"Expected 403 for unauthorized payment, got {response.status_code}")
+        except Exception as e:
+            result.log_failure("Payment error handling", str(e))
+    
+    # Test 3: Payment status for non-existent ride
+    try:
+        response = make_request("GET", "/payment/status/invalid_ride_id", headers=headers)
+        if response.status_code == 404:
+            result.log_success("Payment error handling - Non-existent payment status rejection")
+        else:
+            result.log_failure("Payment error handling", f"Expected 404 for non-existent payment, got {response.status_code}")
+    except Exception as e:
+        result.log_failure("Payment error handling", str(e))
+
 def test_database_integration(result: TestResult):
     """Test database connectivity and data persistence"""
     print(f"\n{'='*60}")
-    print("7. DATABASE INTEGRATION TESTING")
+    print("11. DATABASE INTEGRATION TESTING")
     print(f"{'='*60}")
     
     # Test data persistence by checking if registered users can login
