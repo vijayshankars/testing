@@ -1485,9 +1485,61 @@ const RiderDashboard = () => {
     try {
       const response = await axios.get(`${API}/rider/available-drivers?lat=${lat}&lng=${lng}`);
       setAvailableDrivers(response.data);
+      
+      // Update driver markers on map
+      if (mapInstance && window.google) {
+        updateDriverMarkersOnMap(response.data);
+      }
     } catch (error) {
       console.error('Error fetching drivers:', error);
     }
+  };
+
+  const updateDriverMarkersOnMap = (drivers) => {
+    // Clear existing driver markers
+    driverMarkers.forEach(marker => marker.setMap(null));
+    setDriverMarkers([]);
+
+    // Add new driver markers
+    const newMarkers = [];
+    drivers.forEach(driver => {
+      if (driver.current_location && driver.current_location.lat && driver.current_location.lng) {
+        const marker = new window.google.maps.Marker({
+          position: {
+            lat: driver.current_location.lat,
+            lng: driver.current_location.lng
+          },
+          map: mapInstance,
+          title: `${driver.name} - ${driver.vehicle_type} (₹${driver.per_km_rate}/km)`,
+          icon: {
+            url: 'https://maps.google.com/mapfiles/ms/icons/cabs.png', // Car icon
+            scaledSize: new window.google.maps.Size(32, 32)
+          }
+        });
+
+        // Add info window for driver details
+        const infoWindow = new window.google.maps.InfoWindow({
+          content: `
+            <div style="padding: 8px;">
+              <h4 style="margin: 0 0 4px 0; color: #1f2937;">${driver.name}</h4>
+              <p style="margin: 2px 0; color: #6b7280; font-size: 14px;">
+                🚗 ${driver.vehicle_type}<br>
+                💰 ₹${driver.per_km_rate}/km<br>
+                📍 ${driver.distance}km away
+              </p>
+            </div>
+          `
+        });
+
+        marker.addListener('click', () => {
+          infoWindow.open(mapInstance, marker);
+        });
+
+        newMarkers.push(marker);
+      }
+    });
+
+    setDriverMarkers(newMarkers);
   };
 
   const fetchCurrentRides = async () => {
