@@ -3503,6 +3503,8 @@ const AdminDashboard = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [showDocuments, setShowDocuments] = useState(false);
   const [documents, setDocuments] = useState({});
+  const [mobileSearch, setMobileSearch] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
   
   const { user, logout } = useAuth();
 
