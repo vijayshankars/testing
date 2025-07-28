@@ -232,6 +232,43 @@ def calculate_distance(loc1: Dict[str, float], loc2: Dict[str, float]) -> float:
     """Calculate distance between two locations in kilometers"""
     return geodesic((loc1["lat"], loc1["lng"]), (loc2["lat"], loc2["lng"])).kilometers
 
+def validate_document(document_data: Dict[str, Any]) -> bool:
+    """Validate uploaded document"""
+    if not document_data:
+        return False
+    
+    required_fields = ['name', 'type', 'size', 'data']
+    if not all(field in document_data for field in required_fields):
+        return False
+    
+    # Check file type
+    allowed_types = ['image/jpeg', 'image/png', 'application/pdf']
+    if document_data['type'] not in allowed_types:
+        return False
+    
+    # Check file size (5MB limit)
+    max_size = 5 * 1024 * 1024  # 5MB in bytes
+    if document_data['size'] > max_size:
+        return False
+    
+    return True
+
+def process_document(document_data: Dict[str, Any]) -> Dict[str, Any]:
+    """Process and store document data"""
+    if not validate_document(document_data):
+        return None
+    
+    # Store document metadata (without the actual base64 data for logging)
+    processed_doc = {
+        'name': document_data['name'],
+        'type': document_data['type'],
+        'size': document_data['size'],
+        'uploaded_at': datetime.utcnow().isoformat(),
+        'data': document_data['data']  # Store base64 data
+    }
+    
+    return processed_doc
+
 # Auth Routes
 @api_router.post("/auth/register", response_model=UserResponse)
 async def register(user_data: UserCreate):
