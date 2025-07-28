@@ -648,18 +648,53 @@ const DriverDashboard = () => {
 
           {/* Ride Requests */}
           <div className="lg:col-span-2 bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold mb-4">Nearby Ride Requests</h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-semibold">Nearby Ride Requests</h2>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={fetchRideRequests}
+                  className="text-blue-600 hover:text-blue-800 text-sm"
+                >
+                  Refresh
+                </button>
+                <div className={`w-2 h-2 rounded-full ${isAvailable ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                <span className="text-sm text-gray-600">
+                  {isAvailable ? 'Receiving requests' : 'Offline'}
+                </span>
+              </div>
+            </div>
             
-            {rideRequests.length === 0 ? (
+            {!isAvailable ? (
               <div className="text-center py-8 text-gray-500">
                 <Clock className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                <p>No ride requests available</p>
-                <p className="text-sm">Make sure you're available to receive requests</p>
+                <p className="font-medium">You're currently offline</p>
+                <p className="text-sm">Turn on availability to receive ride requests</p>
+                <button
+                  onClick={toggleAvailability}
+                  className="mt-4 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
+                >
+                  Go Online
+                </button>
+              </div>
+            ) : !currentLocation ? (
+              <div className="text-center py-8 text-gray-500">
+                <MapPin className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                <p className="font-medium">Getting your location...</p>
+                <p className="text-sm">Please enable location services</p>
+              </div>
+            ) : rideRequests.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <Car className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                <p className="font-medium">No ride requests nearby</p>
+                <p className="text-sm">New requests will appear here automatically</p>
+                <p className="text-xs text-gray-400 mt-2">
+                  Searching within 10km radius • Last updated: {new Date().toLocaleTimeString()}
+                </p>
               </div>
             ) : (
               <div className="space-y-4">
                 {rideRequests.map((request) => (
-                  <div key={request.id} className="border border-gray-200 rounded-lg p-4">
+                  <div key={request.id} className="border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors">
                     <div className="flex justify-between items-start mb-3">
                       <div className="flex-1">
                         <div className="flex items-center mb-2">
@@ -667,26 +702,51 @@ const DriverDashboard = () => {
                           <span className="text-sm text-gray-600">From:</span>
                           <span className="ml-2 font-medium">{request.pickup_location.address}</span>
                         </div>
-                        <div className="flex items-center mb-2">
+                        <div className="flex items-center mb-3">
                           <Navigation className="w-4 h-4 text-red-600 mr-2" />
                           <span className="text-sm text-gray-600">To:</span>
                           <span className="ml-2 font-medium">{request.drop_location.address}</span>
                         </div>
-                        <div className="flex items-center space-x-4 text-sm text-gray-600">
-                          <span>Distance: {request.estimated_distance.toFixed(1)} km</span>
-                          <span>Fare: ₹{request.estimated_fare}</span>
-                          <span>Distance to pickup: {request.distance_to_pickup} km</span>
+                        
+                        {/* Request details in a grid */}
+                        <div className="grid grid-cols-3 gap-4 text-sm">
+                          <div className="bg-gray-50 rounded p-2 text-center">
+                            <div className="font-semibold text-blue-600">₹{request.estimated_fare}</div>
+                            <div className="text-gray-600 text-xs">Fare</div>
+                          </div>
+                          <div className="bg-gray-50 rounded p-2 text-center">
+                            <div className="font-semibold text-purple-600">{request.estimated_distance.toFixed(1)} km</div>
+                            <div className="text-gray-600 text-xs">Trip Distance</div>
+                          </div>
+                          <div className="bg-gray-50 rounded p-2 text-center">
+                            <div className="font-semibold text-orange-600">{request.distance_to_pickup} km</div>
+                            <div className="text-gray-600 text-xs">To Pickup</div>
+                          </div>
+                        </div>
+                        
+                        {/* Request time */}
+                        <div className="mt-2 text-xs text-gray-500">
+                          Requested {new Date(request.created_at).toLocaleTimeString()}
                         </div>
                       </div>
-                      <button
-                        onClick={() => acceptRide(request.id)}
-                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-                      >
-                        Accept
-                      </button>
+                      
+                      <div className="ml-4">
+                        <button
+                          onClick={() => acceptRide(request.id)}
+                          className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors font-medium shadow-sm"
+                        >
+                          Accept Ride
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
+                
+                {rideRequests.length > 0 && (
+                  <div className="text-center text-xs text-gray-400 pt-2">
+                    Showing {rideRequests.length} nearby request{rideRequests.length > 1 ? 's' : ''} • Updates every 10 seconds
+                  </div>
+                )}
               </div>
             )}
           </div>
