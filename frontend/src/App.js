@@ -532,6 +532,9 @@ const DriverDashboard = () => {
   const [driverProfile, setDriverProfile] = useState(null);
   const [showProfileForm, setShowProfileForm] = useState(false);
   const [rideRequests, setRideRequests] = useState([]);
+  const [acceptedRides, setAcceptedRides] = useState([]);
+  const [rideHistory, setRideHistory] = useState([]);
+  const [showHistory, setShowHistory] = useState(false);
   const [isAvailable, setIsAvailable] = useState(false);
   const [currentLocation, setCurrentLocation] = useState(null);
   const [profileForm, setProfileForm] = useState({
@@ -543,6 +546,8 @@ const DriverDashboard = () => {
     registration_document: null
   });
   const [flashEffect, setFlashEffect] = useState(false);
+  const [otpInput, setOtpInput] = useState('');
+  const [selectedRideForOTP, setSelectedRideForOTP] = useState(null);
   
   const { user, logout } = useAuth();
   const { getUserLocation } = useGoogleMaps();
