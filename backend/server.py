@@ -32,6 +32,14 @@ JWT_EXPIRATION_HOURS = 24 * 7  # 7 days
 # Security
 security = HTTPBearer()
 
+# Initialize Stripe
+stripe_api_key = os.environ.get('STRIPE_API_KEY')
+if not stripe_api_key:
+    logging.warning("STRIPE_API_KEY not found in environment variables")
+    stripe_checkout = None
+else:
+    stripe_checkout = None  # Will be initialized per request
+
 # Create the main app without a prefix
 app = FastAPI(title="RideShare API")
 
