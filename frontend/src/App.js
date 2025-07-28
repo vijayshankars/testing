@@ -1019,11 +1019,48 @@ const RiderDashboard = () => {
           <div className="space-y-6">
             {/* Map */}
             <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold mb-4">Map</h2>
-              <div 
-                ref={setMapElement}
-                className="w-full h-64 bg-gray-200 rounded-lg"
-              />
+              <h2 className="text-lg font-semibold mb-4 flex items-center">
+                <MapPin className="w-5 h-5 mr-2 text-blue-600" />
+                Live Map
+              </h2>
+              
+              {!loaded ? (
+                <div className="w-full h-64 bg-gray-200 rounded-lg flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                    <p className="text-gray-600">Loading map...</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div 
+                    ref={setMapElement}
+                    className="w-full h-64 bg-gray-200 rounded-lg border-2 border-gray-300"
+                    style={{ minHeight: '256px' }}
+                  />
+                  
+                  <div className="flex items-center justify-between text-sm text-gray-600">
+                    <div className="flex items-center space-x-4">
+                      <div className="flex items-center">
+                        <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
+                        <span>Your Location</span>
+                      </div>
+                      {pickupLocation && (
+                        <div className="flex items-center">
+                          <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                          <span>Pickup</span>
+                        </div>
+                      )}
+                      {dropLocation && (
+                        <div className="flex items-center">
+                          <div className="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
+                          <span>Drop</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Current Rides */}
