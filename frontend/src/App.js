@@ -652,8 +652,14 @@ const DriverDashboard = () => {
                   </div>
                 </div>
                 {currentLocation && (
-                  <div className="text-xs text-gray-600 mt-1">
-                    Lat: {currentLocation.lat.toFixed(4)}, Lng: {currentLocation.lng.toFixed(4)}
+                  <div className="text-xs text-gray-600 mt-1 flex justify-between items-center">
+                    <span>Lat: {currentLocation.lat.toFixed(4)}, Lng: {currentLocation.lng.toFixed(4)}</span>
+                    <button
+                      onClick={getCurrentLocation}
+                      className="text-blue-600 hover:text-blue-800 text-xs underline"
+                    >
+                      Update
+                    </button>
                   </div>
                 )}
               </div>
