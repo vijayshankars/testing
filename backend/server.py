@@ -1048,18 +1048,114 @@ async def get_driver_ride_history(
             }
     
     return {"rides": rides, "total": len(rides)}
-@api_router.post("/rider/request-ride", response_model=RideResponse)
+@api_router.post("/rider/request-ride")
 async def request_ride(
     ride_data: RideRequestCreate,
     current_user: dict = Depends(get_current_user)
 ):
+    """Request a new ride with optional discount application"""
     if current_user["user_type"] != "rider":
         raise HTTPException(status_code=403, detail="Only riders can request rides")
     
-    ride = RideRequest(**ride_data.dict(), rider_id=current_user["id"])
-    await db.ride_requests.insert_one(ride.dict())
+    # Calculate final fare (with discount if provided)
+    final_fare = ride_data.estimated_fare
+    discount_applied = None
     
-    return RideResponse(**ride.dict())
+    if ride_data.promo_code:
+        # Apply discount code
+        discount_request = ApplyDiscountRequest(
+            promo_code=ride_data.promo_code,
+            ride_fare=ride_data.estimated_fare
+        )
+        
+        try:
+            # Reuse the discount application logic
+            discount = await db.discount_codes.find_one({
+                "code": ride_data.promo_code.upper(),
+                "is_active": True,
+                "valid_from": {"$lte": datetime.utcnow()},
+                "valid_until": {"$gte": datetime.utcnow()}
+            })
+            
+            if discount:
+                # Check minimum fare requirement
+                if ride_data.estimated_fare >= discount.get("min_fare_amount", 0):
+                    # Check usage limit
+                    usage_limit_ok = True
+                    if discount.get("usage_limit"):
+                        usage_count = await db.discount_usage.count_documents({
+                            "discount_code": ride_data.promo_code.upper(),
+                            "user_id": current_user["id"]
+                        })
+                        usage_limit_ok = usage_count < discount["usage_limit"]
+                    
+                    if usage_limit_ok:
+                        # Calculate discount amount
+                        discount_amount = 0
+                        if discount["discount_type"] == "percentage":
+                            discount_amount = (ride_data.estimated_fare * discount["discount_value"]) / 100
+                        elif discount["discount_type"] == "fixed_amount":
+                            discount_amount = discount["discount_value"]
+                        elif discount["discount_type"] == "first_ride":
+                            # Check if this is user's first ride
+                            first_ride_count = await db.rides.count_documents({
+                                "rider_id": current_user["id"],
+                                "status": "completed"
+                            })
+                            if first_ride_count == 0:
+                                discount_amount = (ride_data.estimated_fare * discount["discount_value"]) / 100
+                        
+                        # Apply maximum discount limit
+                        if discount.get("max_discount_amount"):
+                            discount_amount = min(discount_amount, discount["max_discount_amount"])
+                        
+                        # Ensure discount doesn't exceed ride fare
+                        discount_amount = min(discount_amount, ride_data.estimated_fare)
+                        
+                        final_fare = ride_data.estimated_fare - discount_amount
+                        discount_applied = {
+                            "code": discount["code"],
+                            "type": discount["discount_type"],
+                            "discount_amount": round(discount_amount, 2),
+                            "original_fare": ride_data.estimated_fare,
+                            "final_fare": round(final_fare, 2)
+                        }
+        except Exception as e:
+            print(f"Discount application during ride request failed: {str(e)}")
+            # Continue without discount if there's an error
+    
+    # Create ride request
+    ride_dict = {
+        "rider_id": current_user["id"],
+        "pickup_location": ride_data.pickup_location,
+        "drop_location": ride_data.drop_location,
+        "estimated_distance": ride_data.estimated_distance,
+        "estimated_fare": ride_data.estimated_fare,
+        "final_fare": round(final_fare, 2),
+        "promo_code": ride_data.promo_code,
+        "discount_applied": discount_applied,
+        "status": "requested",
+        "created_at": datetime.utcnow(),
+        "driver_id": None,
+        "driver_info": None,
+        "ride_otp": None
+    }
+    
+    result = await db.rides.insert_one(ride_dict)
+    ride_dict["id"] = str(result.inserted_id)
+    
+    # Store discount usage if discount was applied
+    if discount_applied:
+        usage_record = {
+            "user_id": current_user["id"],
+            "discount_code": ride_data.promo_code.upper(),
+            "ride_id": ride_dict["id"],
+            "discount_amount": discount_applied["discount_amount"],
+            "used_at": datetime.utcnow()
+        }
+        await db.discount_usage.insert_one(usage_record)
+    
+    return ride_dict
 
 @api_router.post("/rider/apply-discount")
 async def apply_discount_code(request: ApplyDiscountRequest, current_user: dict = Depends(get_current_user)):
