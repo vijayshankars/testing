@@ -1412,6 +1412,7 @@ def main():
     # Run all test suites
     test_basic_health_check(result)
     test_authentication_system(result)
+    test_mobile_otp_authentication_system(result)  # New Mobile OTP tests
     test_driver_functionality(result)
     test_rider_functionality(result)
     test_ride_matching_system(result)
