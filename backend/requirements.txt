@@ -27,3 +27,4 @@ bcrypt>=4.0.1
 geopy>=2.4.1
 emergentintegrations
 razorpay>=1.4.0
+twilio>=9.7.0
