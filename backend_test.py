@@ -14,8 +14,16 @@ BASE_URL = "https://9bc251d5-e3ce-47e0-a729-c8aabb368f35.preview.emergentagent.c
 TIMEOUT = 30
 
 # Test data
+import random
+import string
+
+def generate_random_email(prefix):
+    """Generate random email to avoid conflicts"""
+    random_suffix = ''.join(random.choices(string.ascii_lowercase + string.digits, k=6))
+    return f"{prefix}_{random_suffix}@test.com"
+
 DRIVER_DATA = {
-    "email": "driver@test.com",
+    "email": generate_random_email("driver"),
     "password": "password123",
     "name": "John Driver",
     "phone": "+1234567890",
@@ -23,7 +31,7 @@ DRIVER_DATA = {
 }
 
 RIDER_DATA = {
-    "email": "rider@test.com",
+    "email": generate_random_email("rider"),
     "password": "password123",
     "name": "Jane Rider",
     "phone": "+1234567891",
