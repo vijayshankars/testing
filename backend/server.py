@@ -259,6 +259,18 @@ class AdminDashboardData(BaseModel):
 class UserManagementAction(BaseModel):
     user_id: str
     action: str  # "activate", "deactivate", "verify_driver", "reject_driver"
+
+class RideCancellationRequest(BaseModel):
+    ride_id: str
+    reason: Optional[str] = "User cancelled"
+
+class RideOTPVerification(BaseModel):
+    ride_id: str
+    otp_code: str
+
+class RideStatusUpdate(BaseModel):
+    ride_id: str
+    status: str  # "completed"
 def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
