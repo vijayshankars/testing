@@ -452,8 +452,13 @@ async def verify_otp(request: OTPVerificationRequest):
         # Verify OTP
         is_valid = False
         if twilio_account_sid and twilio_account_sid.startswith('AC_demo'):
-            # Demo mode - check against stored OTP
-            is_valid = request.otp_code == otp_session["otp_code"]
+            # Demo mode - check against stored OTP first, then fallback to demo OTPs
+            if request.otp_code == otp_session["otp_code"]:
+                is_valid = True
+            else:
+                # Also accept standard demo OTPs for testing
+                demo_otps = ["123456", "000000"]
+                is_valid = request.otp_code in demo_otps
         else:
             # Real Twilio mode
             is_valid = await verify_otp_via_twilio(formatted_phone, request.otp_code)
