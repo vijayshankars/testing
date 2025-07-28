@@ -534,62 +534,113 @@ const DriverDashboard = () => {
       <div className="min-h-screen bg-gray-100 p-4">
         <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
           <h2 className="text-2xl font-bold mb-6">Complete Your Driver Profile</h2>
-          <form onSubmit={createDriverProfile} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Per KM Rate (₹)</label>
-              <input
-                type="number"
-                step="0.01"
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                value={profileForm.per_km_rate}
-                onChange={(e) => setProfileForm({ ...profileForm, per_km_rate: e.target.value })}
-              />
+          <form onSubmit={createDriverProfile} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Per KM Rate (₹)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  value={profileForm.per_km_rate}
+                  onChange={(e) => setProfileForm({ ...profileForm, per_km_rate: e.target.value })}
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Vehicle Type</label>
+                <select
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  value={profileForm.vehicle_type}
+                  onChange={(e) => setProfileForm({ ...profileForm, vehicle_type: e.target.value })}
+                >
+                  <option value="">Select Vehicle Type</option>
+                  <option value="bike">Bike</option>
+                  <option value="auto">Auto Rickshaw</option>
+                  <option value="car">Car</option>
+                  <option value="suv">SUV</option>
+                </select>
+              </div>
             </div>
             
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Vehicle Type</label>
-              <select
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                value={profileForm.vehicle_type}
-                onChange={(e) => setProfileForm({ ...profileForm, vehicle_type: e.target.value })}
-              >
-                <option value="">Select Vehicle Type</option>
-                <option value="bike">Bike</option>
-                <option value="auto">Auto Rickshaw</option>
-                <option value="car">Car</option>
-                <option value="suv">SUV</option>
-              </select>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Vehicle Number</label>
+                <input
+                  type="text"
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="e.g., DL01AB1234"
+                  value={profileForm.vehicle_number}
+                  onChange={(e) => setProfileForm({ ...profileForm, vehicle_number: e.target.value })}
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">License Number</label>
+                <input
+                  type="text"
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="e.g., DL1234567890"
+                  value={profileForm.license_number}
+                  onChange={(e) => setProfileForm({ ...profileForm, license_number: e.target.value })}
+                />
+              </div>
             </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Vehicle Number</label>
-              <input
-                type="text"
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                value={profileForm.vehicle_number}
-                onChange={(e) => setProfileForm({ ...profileForm, vehicle_number: e.target.value })}
-              />
+
+            {/* Document Upload Section */}
+            <div className="border-t pt-6">
+              <h3 className="text-lg font-semibold mb-4 text-gray-900">Required Documents</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <DocumentUpload
+                  label="Driver's License"
+                  required={true}
+                  selectedFile={profileForm.license_document}
+                  onFileSelect={(file) => setProfileForm({ ...profileForm, license_document: file })}
+                />
+                
+                <DocumentUpload
+                  label="Vehicle Registration Certificate"
+                  required={true}
+                  selectedFile={profileForm.registration_document}
+                  onFileSelect={(file) => setProfileForm({ ...profileForm, registration_document: file })}
+                />
+              </div>
             </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">License Number</label>
-              <input
-                type="text"
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                value={profileForm.license_number}
-                onChange={(e) => setProfileForm({ ...profileForm, license_number: e.target.value })}
-              />
+
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-start">
+                <div className="flex-shrink-0">
+                  <svg className="w-5 h-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <h4 className="text-sm font-medium text-blue-800">Document Requirements</h4>
+                  <div className="mt-2 text-sm text-blue-700">
+                    <ul className="list-disc space-y-1 ml-5">
+                      <li>Documents should be clear and readable</li>
+                      <li>Accepted formats: JPG, PNG, PDF</li>
+                      <li>Maximum file size: 5MB per document</li>
+                      <li>Documents will be verified before account activation</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
             </div>
             
             <button
               type="submit"
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700"
+              disabled={!profileForm.license_document || !profileForm.registration_document}
+              className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
             >
-              Save Profile
+              {!profileForm.license_document || !profileForm.registration_document 
+                ? 'Please upload required documents' 
+                : 'Save Profile & Documents'
+              }
             </button>
           </form>
         </div>
