@@ -2773,7 +2773,14 @@ const ProtectedRoute = ({ children, requiredUserType }) => {
   }
 
   if (requiredUserType && user.user_type !== requiredUserType) {
-    return <Navigate to={user.user_type === 'driver' ? '/driver-dashboard' : '/rider-dashboard'} replace />;
+    // Redirect to appropriate dashboard based on user type
+    if (user.user_type === 'admin') {
+      return <Navigate to="/admin-dashboard" replace />;
+    } else if (user.user_type === 'driver') {
+      return <Navigate to="/driver-dashboard" replace />;
+    } else {
+      return <Navigate to="/rider-dashboard" replace />;
+    }
   }
 
   return children;
