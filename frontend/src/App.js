@@ -177,8 +177,8 @@ const useGoogleMaps = () => {
         );
       } else {
         console.error('Geolocation not supported');
-        // Fallback to Delhi coordinates
-        resolve({ lat: 28.6139, lng: 77.2090 });
+        // Fallback to Chennai coordinates
+        resolve({ lat: 13.0827, lng: 80.2707 });
       }
     });
   };
