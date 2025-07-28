@@ -1463,62 +1463,105 @@ const RiderDashboard = () => {
   );
 };
 
-// Location Autocomplete Component
+// Enhanced Location Autocomplete Component with Google Places API
 const LocationAutocomplete = ({ 
   placeholder, 
   value, 
   onChange, 
   onLocationSelect, 
-  suggestions = [], 
   showCurrentLocation = false,
   onUseCurrentLocation 
 }) => {
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [localSuggestions, setLocalSuggestions] = useState([]);
+  const [predictions, setPredictions] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
   
-  // Common locations for quick selection
-  const commonLocations = [
-    'Airport, Delhi',
-    'Railway Station, Delhi',
-    'Bus Stand, Delhi',
-    'Metro Station, Delhi',
-    'Hospital, Delhi',
-    'Mall, Delhi',
-    'Connaught Place, Delhi',
-    'India Gate, Delhi',
-    'Red Fort, Delhi',
-    'Lotus Temple, Delhi',
-    'Qutub Minar, Delhi',
-    'Chandni Chowk, Delhi'
-  ];
+  const { loaded } = useGoogleMaps();
+
+  // Debounce function to avoid too many API calls
+  const debounce = (func, wait) => {
+    let timeout;
+    return function executedFunction(...args) {
+      const later = () => {
+        clearTimeout(timeout);
+        func(...args);
+      };
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+    };
+  };
+
+  // Get place predictions from Google Places API
+  const getPlacePredictions = async (input) => {
+    if (!loaded || !window.google || !input || input.length < 2) {
+      setPredictions([]);
+      return;
+    }
+
+    setIsLoading(true);
+    
+    try {
+      const service = new window.google.maps.places.AutocompleteService();
+      
+      const request = {
+        input: input,
+        componentRestrictions: { country: ['in', 'us', 'gb'] }, // Focus on major countries
+        types: ['establishment', 'geocode'], // Include businesses and locations
+        fields: ['place_id', 'name', 'formatted_address', 'geometry']
+      };
+
+      service.getPlacePredictions(request, (predictions, status) => {
+        if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
+          setPredictions(predictions.slice(0, 8)); // Limit to 8 suggestions
+        } else {
+          setPredictions([]);
+        }
+        setIsLoading(false);
+      });
+    } catch (error) {
+      console.error('Error getting place predictions:', error);
+      setIsLoading(false);
+      setPredictions([]);
+    }
+  };
+
+  // Debounced version of getPlacePredictions
+  const debouncedGetPredictions = debounce(getPlacePredictions, 300);
 
   const handleInputChange = (e) => {
     const inputValue = e.target.value;
     onChange(inputValue);
     
-    if (inputValue.length > 2) {
-      // Filter common locations based on input
-      const filtered = commonLocations.filter(location =>
-        location.toLowerCase().includes(inputValue.toLowerCase())
-      );
-      setLocalSuggestions(filtered);
+    if (inputValue.length > 1) {
       setShowSuggestions(true);
+      debouncedGetPredictions(inputValue);
     } else {
       setShowSuggestions(false);
+      setPredictions([]);
     }
   };
 
-  const handleSuggestionClick = (suggestion) => {
-    onChange(suggestion);
-    onLocationSelect(suggestion);
-    setShowSuggestions(false);
+  const handleSuggestionClick = async (prediction) => {
+    try {
+      onChange(prediction.description);
+      onLocationSelect(prediction);
+      setShowSuggestions(false);
+      setPredictions([]);
+    } catch (error) {
+      console.error('Error selecting suggestion:', error);
+    }
   };
 
   const handleInputFocus = () => {
-    if (value.length <= 2) {
-      setLocalSuggestions(commonLocations.slice(0, 8));
+    if (value.length > 1) {
       setShowSuggestions(true);
+      debouncedGetPredictions(value);
     }
+  };
+
+  const handleInputBlur = () => {
+    // Delay hiding suggestions to allow for clicks
+    setTimeout(() => setShowSuggestions(false), 200);
   };
 
   return (
@@ -1526,12 +1569,13 @@ const LocationAutocomplete = ({
       <div className="relative">
         <input
           type="text"
-          className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none"
           placeholder={placeholder}
           value={value}
           onChange={handleInputChange}
           onFocus={handleInputFocus}
-          onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+          onBlur={handleInputBlur}
+          autoComplete="off"
         />
         {showCurrentLocation && (
           <button
@@ -1543,23 +1587,51 @@ const LocationAutocomplete = ({
             <Navigation className="w-5 h-5" />
           </button>
         )}
+        
+        {isLoading && (
+          <div className="absolute right-8 top-2">
+            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+          </div>
+        )}
       </div>
       
-      {showSuggestions && localSuggestions.length > 0 && (
-        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-          {localSuggestions.map((suggestion, index) => (
+      {showSuggestions && (predictions.length > 0 || isLoading) && (
+        <div className="absolute z-20 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-80 overflow-y-auto">
+          {isLoading && predictions.length === 0 && (
+            <div className="px-4 py-3 text-sm text-gray-500">
+              <div className="flex items-center">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                Searching locations...
+              </div>
+            </div>
+          )}
+          
+          {predictions.map((prediction, index) => (
             <button
-              key={index}
+              key={prediction.place_id || index}
               type="button"
               className="w-full px-4 py-3 text-left hover:bg-gray-100 focus:bg-gray-100 border-b border-gray-100 last:border-b-0 transition-colors"
-              onClick={() => handleSuggestionClick(suggestion)}
+              onClick={() => handleSuggestionClick(prediction)}
             >
-              <div className="flex items-center">
-                <MapPin className="w-4 h-4 text-gray-400 mr-3" />
-                <span className="text-sm">{suggestion}</span>
+              <div className="flex items-start">
+                <MapPin className="w-4 h-4 text-gray-400 mr-3 mt-0.5 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium text-gray-900 truncate">
+                    {prediction.structured_formatting?.main_text || prediction.description}
+                  </div>
+                  <div className="text-xs text-gray-500 truncate">
+                    {prediction.structured_formatting?.secondary_text || prediction.description}
+                  </div>
+                </div>
               </div>
             </button>
           ))}
+          
+          {predictions.length === 0 && !isLoading && (
+            <div className="px-4 py-3 text-sm text-gray-500">
+              No locations found. Try a different search term.
+            </div>
+          )}
         </div>
       )}
     </div>
