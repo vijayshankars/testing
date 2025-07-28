@@ -416,6 +416,7 @@ const DriverDashboard = () => {
   useEffect(() => {
     if (driverProfile && currentLocation) {
       updateDriverLocation();
+      fetchRideRequests(); // Fetch immediately when location is available
       const interval = setInterval(fetchRideRequests, 10000); // Check every 10 seconds
       return () => clearInterval(interval);
     }
@@ -425,8 +426,13 @@ const DriverDashboard = () => {
     try {
       const location = await getUserLocation();
       setCurrentLocation(location);
+      console.log('Driver location updated:', location);
     } catch (error) {
       console.error('Error getting location:', error);
+      // Try to use a fallback location for testing
+      const fallbackLocation = { lat: 28.6139, lng: 77.2090 };
+      setCurrentLocation(fallbackLocation);
+      console.log('Using fallback location:', fallbackLocation);
     }
   };
 
@@ -435,6 +441,7 @@ const DriverDashboard = () => {
     
     try {
       await axios.put(`${API}/driver/location`, currentLocation);
+      console.log('Driver location updated successfully');
     } catch (error) {
       console.error('Error updating location:', error);
     }
