@@ -101,8 +101,11 @@ class DriverProfile(BaseModel):
     vehicle_type: str
     vehicle_number: str
     license_number: str
+    license_document: Optional[Dict[str, Any]] = None  # Store document info
+    registration_document: Optional[Dict[str, Any]] = None  # Store document info
     is_available: bool = True
     current_location: Optional[Dict[str, float]] = None  # {"lat": float, "lng": float}
+    document_verified: bool = False
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 class DriverProfileCreate(BaseModel):
