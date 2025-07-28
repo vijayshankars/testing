@@ -1935,6 +1935,358 @@ def test_nearby_ride_requests_scenario(result: TestResult):
     except Exception as e:
         result.log_failure("Step 10", f"Verify accepted ride removal error: {str(e)}")
 
+def test_mobile_number_search_functionality(result: TestResult):
+    """Test mobile number search functionality in admin dashboard"""
+    print(f"\n{'='*60}")
+    print("MOBILE NUMBER SEARCH FUNCTIONALITY TESTING")
+    print(f"{'='*60}")
+    
+    # Step 1: Create Admin User via Mobile OTP Authentication
+    admin_token = None
+    admin_phone = "+91 9999999999"
+    
+    try:
+        # Send OTP for admin user
+        otp_data = {
+            "phone_number": admin_phone,
+            "user_type": "admin"
+        }
+        response = make_request("POST", "/auth/send-otp", otp_data)
+        if response.status_code == 200:
+            data = response.json()
+            if data.get("success"):
+                result.log_success("Step 1a - Admin OTP sent successfully")
+                demo_otp = data.get("demo_otp", "123456")
+            else:
+                result.log_failure("Step 1a", f"Admin OTP send failed: {data}")
+                return
+        else:
+            result.log_failure("Step 1a", f"Admin OTP send status {response.status_code}: {response.text}")
+            return
+    except Exception as e:
+        result.log_failure("Step 1a", f"Admin OTP send error: {str(e)}")
+        return
+    
+    # Verify OTP and create admin user
+    try:
+        verify_data = {
+            "phone_number": admin_phone,
+            "otp_code": demo_otp,
+            "user_type": "admin",
+            "name": "Test Admin User"
+        }
+        response = make_request("POST", "/auth/verify-otp", verify_data)
+        if response.status_code == 200:
+            data = response.json()
+            if data.get("success") and data.get("token"):
+                admin_token = data["token"]
+                result.log_success("Step 1b - Admin user created via mobile OTP authentication")
+            else:
+                result.log_failure("Step 1b", f"Admin OTP verification failed: {data}")
+                return
+        else:
+            result.log_failure("Step 1b", f"Admin OTP verification status {response.status_code}: {response.text}")
+            return
+    except Exception as e:
+        result.log_failure("Step 1b", f"Admin OTP verification error: {str(e)}")
+        return
+    
+    if not admin_token:
+        result.log_failure("Mobile search setup", "No admin token available")
+        return
+    
+    admin_headers = get_auth_headers(admin_token)
+    
+    # Step 2: Create Test Users with Different Mobile Numbers
+    test_users = [
+        {"phone": "+91 9876543210", "user_type": "rider", "name": "Test Rider 1"},
+        {"phone": "+91 9876543211", "user_type": "driver", "name": "Test Driver 1"},
+        {"phone": "+91 8765432109", "user_type": "rider", "name": "Test Rider 2"}
+    ]
+    
+    created_users = []
+    
+    for i, user_data in enumerate(test_users):
+        try:
+            # Send OTP
+            otp_request = {
+                "phone_number": user_data["phone"],
+                "user_type": user_data["user_type"]
+            }
+            send_response = make_request("POST", "/auth/send-otp", otp_request)
+            
+            if send_response.status_code == 200:
+                send_data = send_response.json()
+                if send_data.get("success"):
+                    demo_otp = send_data.get("demo_otp", "123456")
+                    
+                    # Verify OTP and create user
+                    verify_request = {
+                        "phone_number": user_data["phone"],
+                        "otp_code": demo_otp,
+                        "user_type": user_data["user_type"],
+                        "name": user_data["name"]
+                    }
+                    verify_response = make_request("POST", "/auth/verify-otp", verify_request)
+                    
+                    if verify_response.status_code == 200:
+                        verify_data = verify_response.json()
+                        if verify_data.get("success"):
+                            created_users.append(user_data)
+                            result.log_success(f"Step 2{chr(97+i)} - Created {user_data['user_type']} with {user_data['phone']}")
+                        else:
+                            result.log_failure(f"Step 2{chr(97+i)}", f"User creation failed: {verify_data}")
+                    else:
+                        result.log_failure(f"Step 2{chr(97+i)}", f"User verification failed: {verify_response.status_code}")
+                else:
+                    result.log_failure(f"Step 2{chr(97+i)}", f"OTP send failed: {send_data}")
+            else:
+                result.log_failure(f"Step 2{chr(97+i)}", f"OTP send status {send_response.status_code}")
+        except Exception as e:
+            result.log_failure(f"Step 2{chr(97+i)}", f"User creation error: {str(e)}")
+    
+    if len(created_users) < 3:
+        result.log_failure("Test users setup", f"Only {len(created_users)} users created, need 3")
+        # Continue with available users
+    
+    # Step 3: Test Mobile Search Functionality
+    
+    # Test 3a: Search for partial mobile numbers "9876"
+    try:
+        params = {"mobile_search": "9876"}
+        response = make_request("GET", "/admin/users", headers=admin_headers, params=params)
+        if response.status_code == 200:
+            data = response.json()
+            if "users" in data and isinstance(data["users"], list):
+                # Should return users with 9876543210 and 9876543211
+                found_phones = [user.get("phone", "") for user in data["users"]]
+                expected_phones = ["+919876543210", "+919876543211"]
+                
+                matches = sum(1 for phone in expected_phones if any(phone in found for found in found_phones))
+                if matches >= 2:
+                    result.log_success("Step 3a - Mobile search '9876' returns users with matching numbers")
+                else:
+                    result.log_failure("Step 3a", f"Expected 2+ matches for '9876', found phones: {found_phones}")
+            else:
+                result.log_failure("Step 3a", f"Invalid response structure: {data}")
+        else:
+            result.log_failure("Step 3a", f"Mobile search status {response.status_code}: {response.text}")
+    except Exception as e:
+        result.log_failure("Step 3a", f"Mobile search error: {str(e)}")
+    
+    # Test 3b: Search for partial mobile numbers "87654"
+    try:
+        params = {"mobile_search": "87654"}
+        response = make_request("GET", "/admin/users", headers=admin_headers, params=params)
+        if response.status_code == 200:
+            data = response.json()
+            if "users" in data and isinstance(data["users"], list):
+                # Should return user with 8765432109
+                found_phones = [user.get("phone", "") for user in data["users"]]
+                expected_phone = "+918765432109"
+                
+                if any(expected_phone in phone for phone in found_phones):
+                    result.log_success("Step 3b - Mobile search '87654' returns user with 8765432109")
+                else:
+                    result.log_failure("Step 3b", f"Expected match for '87654', found phones: {found_phones}")
+            else:
+                result.log_failure("Step 3b", f"Invalid response structure: {data}")
+        else:
+            result.log_failure("Step 3b", f"Mobile search status {response.status_code}: {response.text}")
+    except Exception as e:
+        result.log_failure("Step 3b", f"Mobile search error: {str(e)}")
+    
+    # Test 3c: Search for "999" (should return admin user)
+    try:
+        params = {"mobile_search": "999"}
+        response = make_request("GET", "/admin/users", headers=admin_headers, params=params)
+        if response.status_code == 200:
+            data = response.json()
+            if "users" in data and isinstance(data["users"], list):
+                # Should return admin user with 9999999999
+                found_phones = [user.get("phone", "") for user in data["users"]]
+                expected_phone = "+919999999999"
+                
+                if any(expected_phone in phone for phone in found_phones):
+                    result.log_success("Step 3c - Mobile search '999' returns admin user")
+                else:
+                    result.log_failure("Step 3c", f"Expected admin user for '999', found phones: {found_phones}")
+            else:
+                result.log_failure("Step 3c", f"Invalid response structure: {data}")
+        else:
+            result.log_failure("Step 3c", f"Mobile search status {response.status_code}: {response.text}")
+    except Exception as e:
+        result.log_failure("Step 3c", f"Mobile search error: {str(e)}")
+    
+    # Step 4: Test Combined Filters (mobile search + user_type)
+    
+    # Test 4a: Search for "9876" with user_type="rider"
+    try:
+        params = {"mobile_search": "9876", "user_type": "rider"}
+        response = make_request("GET", "/admin/users", headers=admin_headers, params=params)
+        if response.status_code == 200:
+            data = response.json()
+            if "users" in data and isinstance(data["users"], list):
+                # Should return only rider with 9876543210
+                found_users = data["users"]
+                rider_matches = [user for user in found_users if user.get("user_type") == "rider"]
+                
+                if len(rider_matches) >= 1:
+                    rider_phone = rider_matches[0].get("phone", "")
+                    if "9876543210" in rider_phone:
+                        result.log_success("Step 4a - Combined filter '9876' + user_type='rider' works correctly")
+                    else:
+                        result.log_failure("Step 4a", f"Wrong rider returned: {rider_phone}")
+                else:
+                    result.log_failure("Step 4a", f"No rider found for combined filter, users: {found_users}")
+            else:
+                result.log_failure("Step 4a", f"Invalid response structure: {data}")
+        else:
+            result.log_failure("Step 4a", f"Combined filter status {response.status_code}: {response.text}")
+    except Exception as e:
+        result.log_failure("Step 4a", f"Combined filter error: {str(e)}")
+    
+    # Test 4b: Search for "9876" with user_type="driver"
+    try:
+        params = {"mobile_search": "9876", "user_type": "driver"}
+        response = make_request("GET", "/admin/users", headers=admin_headers, params=params)
+        if response.status_code == 200:
+            data = response.json()
+            if "users" in data and isinstance(data["users"], list):
+                # Should return only driver with 9876543211
+                found_users = data["users"]
+                driver_matches = [user for user in found_users if user.get("user_type") == "driver"]
+                
+                if len(driver_matches) >= 1:
+                    driver_phone = driver_matches[0].get("phone", "")
+                    if "9876543211" in driver_phone:
+                        result.log_success("Step 4b - Combined filter '9876' + user_type='driver' works correctly")
+                    else:
+                        result.log_failure("Step 4b", f"Wrong driver returned: {driver_phone}")
+                else:
+                    result.log_failure("Step 4b", f"No driver found for combined filter, users: {found_users}")
+            else:
+                result.log_failure("Step 4b", f"Invalid response structure: {data}")
+        else:
+            result.log_failure("Step 4b", f"Combined filter status {response.status_code}: {response.text}")
+    except Exception as e:
+        result.log_failure("Step 4b", f"Combined filter error: {str(e)}")
+    
+    # Step 5: Test Edge Cases
+    
+    # Test 5a: Empty search string
+    try:
+        params = {"mobile_search": ""}
+        response = make_request("GET", "/admin/users", headers=admin_headers, params=params)
+        if response.status_code == 200:
+            data = response.json()
+            if "users" in data:
+                # Should return all users (no filtering)
+                result.log_success("Step 5a - Empty search string handled correctly")
+            else:
+                result.log_failure("Step 5a", f"Invalid response for empty search: {data}")
+        else:
+            result.log_failure("Step 5a", f"Empty search status {response.status_code}: {response.text}")
+    except Exception as e:
+        result.log_failure("Step 5a", f"Empty search error: {str(e)}")
+    
+    # Test 5b: Search with special characters
+    try:
+        params = {"mobile_search": "+91-987"}
+        response = make_request("GET", "/admin/users", headers=admin_headers, params=params)
+        if response.status_code == 200:
+            data = response.json()
+            if "users" in data:
+                # Should extract digits and search for "91987"
+                result.log_success("Step 5b - Special characters in search handled correctly")
+            else:
+                result.log_failure("Step 5b", f"Invalid response for special chars: {data}")
+        else:
+            result.log_failure("Step 5b", f"Special chars search status {response.status_code}: {response.text}")
+    except Exception as e:
+        result.log_failure("Step 5b", f"Special chars search error: {str(e)}")
+    
+    # Test 5c: Search with less than 3 digits
+    try:
+        params = {"mobile_search": "98"}
+        response = make_request("GET", "/admin/users", headers=admin_headers, params=params)
+        if response.status_code == 200:
+            data = response.json()
+            if "users" in data:
+                # Should still work, just return matches for "98"
+                result.log_success("Step 5c - Short search string handled correctly")
+            else:
+                result.log_failure("Step 5c", f"Invalid response for short search: {data}")
+        else:
+            result.log_failure("Step 5c", f"Short search status {response.status_code}: {response.text}")
+    except Exception as e:
+        result.log_failure("Step 5c", f"Short search error: {str(e)}")
+    
+    # Test 5d: Non-existent mobile numbers
+    try:
+        params = {"mobile_search": "1111111111"}
+        response = make_request("GET", "/admin/users", headers=admin_headers, params=params)
+        if response.status_code == 200:
+            data = response.json()
+            if "users" in data and isinstance(data["users"], list):
+                if len(data["users"]) == 0:
+                    result.log_success("Step 5d - Non-existent mobile number returns empty results")
+                else:
+                    result.log_failure("Step 5d", f"Should return empty for non-existent number, got: {len(data['users'])} users")
+            else:
+                result.log_failure("Step 5d", f"Invalid response for non-existent search: {data}")
+        else:
+            result.log_failure("Step 5d", f"Non-existent search status {response.status_code}: {response.text}")
+    except Exception as e:
+        result.log_failure("Step 5d", f"Non-existent search error: {str(e)}")
+    
+    # Test 5e: Unauthorized access (non-admin user)
+    if created_users:
+        try:
+            # Try to use a regular user token to access admin endpoint
+            # First get a regular user token
+            regular_user = created_users[0]
+            
+            # Send OTP and get token for regular user
+            otp_request = {
+                "phone_number": regular_user["phone"],
+                "user_type": regular_user["user_type"]
+            }
+            send_response = make_request("POST", "/auth/send-otp", otp_request)
+            
+            if send_response.status_code == 200:
+                send_data = send_response.json()
+                demo_otp = send_data.get("demo_otp", "123456")
+                
+                verify_request = {
+                    "phone_number": regular_user["phone"],
+                    "otp_code": demo_otp,
+                    "user_type": regular_user["user_type"]
+                }
+                verify_response = make_request("POST", "/auth/verify-otp", verify_request)
+                
+                if verify_response.status_code == 200:
+                    verify_data = verify_response.json()
+                    if verify_data.get("token"):
+                        regular_headers = get_auth_headers(verify_data["token"])
+                        
+                        # Try to access admin endpoint
+                        params = {"mobile_search": "9876"}
+                        response = make_request("GET", "/admin/users", headers=regular_headers, params=params)
+                        
+                        if response.status_code == 403:
+                            result.log_success("Step 5e - Unauthorized access properly rejected")
+                        else:
+                            result.log_failure("Step 5e", f"Should reject non-admin access, got {response.status_code}")
+                    else:
+                        result.log_failure("Step 5e", "Failed to get regular user token")
+                else:
+                    result.log_failure("Step 5e", "Failed to verify regular user")
+            else:
+                result.log_failure("Step 5e", "Failed to send OTP for regular user")
+        except Exception as e:
+            result.log_failure("Step 5e", f"Unauthorized access test error: {str(e)}")
+
 def main():
     """Run all tests"""
     print("🚗 RideShare Backend API Testing")
