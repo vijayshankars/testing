@@ -662,6 +662,8 @@ const RiderDashboard = () => {
   const [currentRides, setCurrentRides] = useState([]);
   const [currentLocation, setCurrentLocation] = useState(null);
   const [mapElement, setMapElement] = useState(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [selectedRideForPayment, setSelectedRideForPayment] = useState(null);
   
   const { user, logout } = useAuth();
   const { loaded, initMap, calculateRoute, getUserLocation } = useGoogleMaps();
