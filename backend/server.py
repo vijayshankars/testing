@@ -147,7 +147,7 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         return {**user, "user_type": user_type}
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token expired")
-    except jwt.JWTError:
+    except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid token")
 
 def calculate_distance(loc1: Dict[str, float], loc2: Dict[str, float]) -> float:
