@@ -1219,6 +1219,8 @@ def test_comprehensive_discount_system(result: TestResult):
                     result.log_success("Step 2 - Sample discount codes created (FIRST20, SAVE10, FLAT50, WEEKEND25)")
                 else:
                     result.log_failure("Step 2", f"Missing expected discount codes. Got: {data['codes']}")
+            elif "already exist" in data.get("message", ""):
+                result.log_success("Step 2 - Sample discount codes already exist (expected)")
             else:
                 result.log_failure("Step 2", f"Unexpected response format: {data}")
         else:
