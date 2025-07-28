@@ -2342,6 +2342,72 @@ const RiderDashboard = () => {
         </div>
       )}
 
+      {/* Available Discounts Modal */}
+      {showDiscountModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-2xl w-full max-w-md max-h-[80vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold text-gray-900">Available Offers</h2>
+                <button
+                  onClick={() => setShowDiscountModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <XCircle className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {availableDiscounts.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <div className="w-16 h-16 bg-gray-200 rounded-full mx-auto mb-3 flex items-center justify-center">
+                      <span className="text-2xl">🎁</span>
+                    </div>
+                    <p>No discount codes available at the moment</p>
+                    <p className="text-sm">Check back later for exciting offers!</p>
+                  </div>
+                ) : (
+                  availableDiscounts.map((discount, index) => (
+                    <div
+                      key={index}
+                      onClick={() => selectDiscountCode(discount)}
+                      className="border border-orange-200 rounded-lg p-4 hover:bg-orange-50 cursor-pointer transition-colors"
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-bold text-orange-600 text-lg">
+                          {discount.code}
+                        </span>
+                        <span className="bg-orange-100 text-orange-800 px-2 py-1 rounded-full text-xs font-medium">
+                          {discount.discount_type === 'percentage' ? `${discount.discount_value}% OFF` :
+                           discount.discount_type === 'fixed_amount' ? `₹${discount.discount_value} OFF` :
+                           `${discount.discount_value}% OFF`}
+                        </span>
+                      </div>
+                      
+                      <div className="text-sm text-gray-600 space-y-1">
+                        {discount.min_fare_amount > 0 && (
+                          <div>Minimum fare: ₹{discount.min_fare_amount}</div>
+                        )}
+                        {discount.max_discount_amount && (
+                          <div>Maximum discount: ₹{discount.max_discount_amount}</div>
+                        )}
+                        <div className="text-xs text-gray-500">
+                          Valid until: {new Date(discount.valid_until).toLocaleDateString()}
+                        </div>
+                      </div>
+                      
+                      <div className="mt-3 text-xs text-orange-600 font-medium">
+                        Tap to apply this offer
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* UPI Payment Modal */}
       {showPaymentModal && selectedRideForPayment && (
         <UPIPaymentModal
