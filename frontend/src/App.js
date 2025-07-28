@@ -458,6 +458,18 @@ const DriverDashboard = () => {
       setRideRequests(response.data);
     } catch (error) {
       console.error('Error fetching ride requests:', error);
+      // If location not set, show helpful message
+      if (error.response?.status === 400 && error.response?.data?.detail?.includes('location not set')) {
+        console.log('Driver location not set - updating location...');
+        // Try to update location and retry
+        if (currentLocation) {
+          await updateDriverLocation();
+          // Retry after location update
+          setTimeout(() => fetchRideRequests(), 2000);
+        }
+      }
+      // Set empty array to show "no requests" instead of error
+      setRideRequests([]);
     }
   };
 
