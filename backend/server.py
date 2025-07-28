@@ -1060,6 +1060,187 @@ async def request_ride(
     
     return RideResponse(**ride.dict())
 
+@api_router.post("/rider/apply-discount")
+async def apply_discount_code(request: ApplyDiscountRequest, current_user: dict = Depends(get_current_user)):
+    """Apply discount code to ride fare"""
+    try:
+        if current_user["user_type"] != "rider":
+            raise HTTPException(status_code=403, detail="Only riders can apply discount codes")
+        
+        # Find the discount code
+        discount = await db.discount_codes.find_one({
+            "code": request.promo_code.upper(),
+            "is_active": True,
+            "valid_from": {"$lte": datetime.utcnow()},
+            "valid_until": {"$gte": datetime.utcnow()}
+        })
+        
+        if not discount:
+            return {
+                "success": False,
+                "message": "Invalid or expired promo code"
+            }
+        
+        # Check minimum fare requirement
+        if request.ride_fare < discount.get("min_fare_amount", 0):
+            return {
+                "success": False,
+                "message": f"Minimum fare of ₹{discount['min_fare_amount']} required for this promo code"
+            }
+        
+        # Check usage limit
+        if discount.get("usage_limit"):
+            usage_count = await db.discount_usage.count_documents({
+                "discount_code": request.promo_code.upper(),
+                "user_id": current_user["id"]
+            })
+            if usage_count >= discount["usage_limit"]:
+                return {
+                    "success": False,
+                    "message": "Promo code usage limit exceeded"
+                }
+        
+        # Calculate discount amount
+        discount_amount = 0
+        if discount["discount_type"] == "percentage":
+            discount_amount = (request.ride_fare * discount["discount_value"]) / 100
+        elif discount["discount_type"] == "fixed_amount":
+            discount_amount = discount["discount_value"]
+        elif discount["discount_type"] == "first_ride":
+            # Check if this is user's first ride
+            first_ride_count = await db.rides.count_documents({
+                "rider_id": current_user["id"],
+                "status": "completed"
+            })
+            if first_ride_count > 0:
+                return {
+                    "success": False,
+                    "message": "First ride discount is only valid for new users"
+                }
+            discount_amount = (request.ride_fare * discount["discount_value"]) / 100
+        
+        # Apply maximum discount limit
+        if discount.get("max_discount_amount"):
+            discount_amount = min(discount_amount, discount["max_discount_amount"])
+        
+        # Ensure discount doesn't exceed ride fare
+        discount_amount = min(discount_amount, request.ride_fare)
+        
+        final_fare = request.ride_fare - discount_amount
+        
+        return {
+            "success": True,
+            "message": "Discount applied successfully!",
+            "discount_details": {
+                "code": discount["code"],
+                "type": discount["discount_type"],
+                "original_fare": request.ride_fare,
+                "discount_amount": round(discount_amount, 2),
+                "final_fare": round(final_fare, 2),
+                "savings": round(discount_amount, 2)
+            }
+        }
+        
+    except Exception as e:
+        print(f"Apply discount error: {str(e)}")
+        return {
+            "success": False,
+            "message": "Failed to apply discount code"
+        }
+
+@api_router.get("/rider/available-discounts")
+async def get_available_discounts(current_user: dict = Depends(get_current_user)):
+    """Get available discount codes for the rider"""
+    try:
+        if current_user["user_type"] != "rider":
+            raise HTTPException(status_code=403, detail="Only riders can view discount codes")
+        
+        # Get active discount codes
+        discounts = await db.discount_codes.find({
+            "is_active": True,
+            "valid_from": {"$lte": datetime.utcnow()},
+            "valid_until": {"$gte": datetime.utcnow()}
+        }).to_list(20)
+        
+        available_discounts = []
+        for discount in discounts:
+            # Check if user has already used this discount (if usage limit exists)
+            can_use = True
+            if discount.get("usage_limit"):
+                usage_count = await db.discount_usage.count_documents({
+                    "discount_code": discount["code"],
+                    "user_id": current_user["id"]
+                })
+                can_use = usage_count < discount["usage_limit"]
+            
+            if can_use:
+                available_discounts.append({
+                    "code": discount["code"],
+                    "discount_type": discount["discount_type"],
+                    "discount_value": discount["discount_value"],
+                    "min_fare_amount": discount.get("min_fare_amount", 0),
+                    "max_discount_amount": discount.get("max_discount_amount"),
+                    "description": discount.get("description", ""),
+                    "valid_until": discount["valid_until"].isoformat()
+                })
+        
+        return {
+            "success": True,
+            "discounts": available_discounts
+        }
+        
+    except Exception as e:
+        print(f"Get available discounts error: {str(e)}")
+        return {
+            "success": False,
+            "message": "Failed to fetch available discounts"
+        }
+
+# Admin endpoint to create discount codes
+@api_router.post("/admin/create-discount")
+async def create_discount_code(discount_data: DiscountCode, current_user: dict = Depends(get_current_user)):
+    """Create a new discount code (Admin only)"""
+    try:
+        if current_user["user_type"] != "admin":
+            raise HTTPException(status_code=403, detail="Only admins can create discount codes")
+        
+        # Check if discount code already exists
+        existing_discount = await db.discount_codes.find_one({"code": discount_data.code.upper()})
+        if existing_discount:
+            raise HTTPException(status_code=400, detail="Discount code already exists")
+        
+        # Create discount code
+        discount_dict = discount_data.dict()
+        discount_dict["code"] = discount_data.code.upper()
+        discount_dict["created_by"] = current_user["id"]
+        
+        result = await db.discount_codes.insert_one(discount_dict)
+        
+        return {
+            "success": True,
+            "message": "Discount code created successfully",
+            "discount_id": str(result.inserted_id)
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Create discount error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to create discount code")
+
+@api_router.post("/rider/rides")
+async def request_ride_post(
+    ride_data: RideRequestCreate,
+    current_user: dict = Depends(get_current_user)
+):
+    if current_user["user_type"] != "rider":
+        raise HTTPException(status_code=403, detail="Only riders can request rides")
+    
+    ride = RideRequest(**ride_data.dict(), rider_id=current_user["id"])
+    await db.ride_requests.insert_one(ride.dict())
+    
+    return RideResponse(**ride.dict())
+
 @api_router.get("/rider/rides")
 async def get_rider_rides(current_user: dict = Depends(get_current_user)):
     if current_user["user_type"] != "rider":
