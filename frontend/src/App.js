@@ -1399,6 +1399,18 @@ const RiderDashboard = () => {
     fetchAvailableDiscounts(); // Load available discounts on mount
   }, []);
 
+  // Auto-populate pickup location when current location is available
+  useEffect(() => {
+    if (currentLocation && !pickupLocation) {
+      const address = `Current Location (${currentLocation.lat.toFixed(4)}, ${currentLocation.lng.toFixed(4)})`;
+      setPickupLocation(address);
+      // Also set it on the map
+      setTimeout(() => {
+        handleLocationSelect('pickup', address);
+      }, 1000);
+    }
+  }, [currentLocation]);
+
   useEffect(() => {
     if (loaded && mapElement && currentLocation) {
       const map = initMap(mapElement, {
