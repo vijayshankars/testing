@@ -14,8 +14,10 @@ BASE_URL = "https://87aa55a7-7445-442a-b69c-85a42d10dc65.preview.emergentagent.c
 TIMEOUT = 30
 
 # Test data for OTP verification testing
-RIDER_PHONE = "+91 9876543210"
-DRIVER_PHONE = "+91 9876543213"  # Changed to avoid conflicts
+import time
+TIMESTAMP = str(int(time.time()))[-4:]  # Last 4 digits of timestamp for uniqueness
+RIDER_PHONE = f"+91 987654{TIMESTAMP[:4]}"
+DRIVER_PHONE = f"+91 987655{TIMESTAMP[:4]}"
 DEMO_OTP = "123456"
 
 # Chennai locations for testing
