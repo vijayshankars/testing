@@ -206,8 +206,10 @@ class DriverProfileEnhancementsTest:
             try:
                 # Create a new driver for each vehicle type test
                 import time
-                timestamp = int(time.time())
-                phone_number = f"+91 {timestamp % 10000000000:010d}"  # Generate unique phone number
+                import random
+                time.sleep(0.5)  # Small delay to ensure unique timestamps
+                timestamp = int(time.time() * 1000) + random.randint(1, 999)  # More unique timestamp
+                phone_number = f"+91 {(timestamp + i * 1000) % 10000000000:010d}"  # Generate unique phone number
                 
                 # Send OTP
                 otp_request = {
@@ -260,8 +262,8 @@ class DriverProfileEnhancementsTest:
                 # Create driver profile WITHOUT per_km_rate field
                 profile_data = {
                     "vehicle_type": test_case["vehicle_type"],
-                    "vehicle_number": test_case["vehicle_number"],
-                    "license_number": test_case["license"]
+                    "vehicle_number": f"{test_case['vehicle_number'][:-4]}{timestamp % 10000:04d}",  # Unique vehicle number
+                    "license_number": f"{test_case['license'][:-4]}{timestamp % 10000:04d}"  # Unique license number
                 }
                 
                 response = self.session.post(
