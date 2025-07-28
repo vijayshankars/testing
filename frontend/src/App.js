@@ -222,7 +222,9 @@ const AuthPage = () => {
   const handleMobileAuthSuccess = (userData, token) => {
     login(userData, token);
     
-    if (userData.user_type === 'driver') {
+    if (userData.user_type === 'admin') {
+      navigate('/admin-dashboard');
+    } else if (userData.user_type === 'driver') {
       navigate('/driver-dashboard');
     } else {
       navigate('/rider-dashboard');
