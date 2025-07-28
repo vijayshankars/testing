@@ -147,6 +147,236 @@ def test_basic_health_check(result: TestResult):
     except Exception as e:
         result.log_failure("GET /api/maps-config", str(e))
 
+def test_vahan_vehicle_verification_system(result: TestResult):
+    """Test VAHAN vehicle verification integration"""
+    print(f"\n{'='*60}")
+    print("VAHAN VEHICLE VERIFICATION SYSTEM TESTING")
+    print(f"{'='*60}")
+    
+    # First, create a test driver user via mobile OTP authentication
+    test_phone = "+91 9876543210"
+    driver_token = None
+    
+    # Step 1: Send OTP for driver registration
+    try:
+        otp_data = {
+            "phone_number": test_phone,
+            "user_type": "driver"
+        }
+        response = make_request("POST", "/auth/send-otp", otp_data)
+        if response.status_code == 200:
+            data = response.json()
+            if data.get("success"):
+                result.log_success("Driver OTP sent successfully")
+                demo_otp = data.get("demo_otp", "123456")  # Use demo OTP
+            else:
+                result.log_failure("Driver OTP send", f"Failed: {data}")
+                return
+        else:
+            result.log_failure("Driver OTP send", f"Status {response.status_code}: {response.text}")
+            return
+    except Exception as e:
+        result.log_failure("Driver OTP send", str(e))
+        return
+    
+    # Step 2: Verify OTP and create driver user
+    try:
+        verify_data = {
+            "phone_number": test_phone,
+            "otp_code": demo_otp,
+            "user_type": "driver",
+            "name": "Test Driver for Vehicle Verification"
+        }
+        response = make_request("POST", "/auth/verify-otp", verify_data)
+        if response.status_code == 200:
+            data = response.json()
+            if data.get("success") and data.get("token"):
+                driver_token = data["token"]
+                result.log_success("Driver OTP verification and registration")
+            else:
+                result.log_failure("Driver OTP verification", f"Failed: {data}")
+                return
+        else:
+            result.log_failure("Driver OTP verification", f"Status {response.status_code}: {response.text}")
+            return
+    except Exception as e:
+        result.log_failure("Driver OTP verification", str(e))
+        return
+    
+    if not driver_token:
+        result.log_failure("Vehicle verification setup", "No driver token available")
+        return
+    
+    headers = get_auth_headers(driver_token)
+    
+    # Test valid Indian vehicle numbers from different states
+    valid_vehicles = [
+        {"number": "KA01AB1234", "state": "Karnataka"},
+        {"number": "TN02CD5678", "state": "Tamil Nadu"},
+        {"number": "MH12EF9012", "state": "Maharashtra"},
+        {"number": "DL03GH3456", "state": "Delhi"}
+    ]
+    
+    print(f"\n--- Testing Valid Vehicle Numbers ---")
+    for vehicle in valid_vehicles:
+        try:
+            vehicle_data = {
+                "vehicle_number": vehicle["number"],
+                "vehicle_type": "car"
+            }
+            response = make_request("POST", "/driver/verify-vehicle", vehicle_data, headers)
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success") and data.get("vehicle_data"):
+                    vehicle_info = data["vehicle_data"]
+                    # Verify required fields in response
+                    required_fields = ["registration_number", "owner_name", "vehicle_class", 
+                                     "fuel_type", "registration_date", "status"]
+                    if all(field in vehicle_info for field in required_fields):
+                        result.log_success(f"Vehicle verification for {vehicle['number']} ({vehicle['state']})")
+                        
+                        # Verify verification ID is generated
+                        if data.get("verification_id"):
+                            result.log_success(f"Verification ID generated for {vehicle['number']}")
+                        else:
+                            result.log_failure(f"Verification ID for {vehicle['number']}", "Missing verification_id")
+                    else:
+                        missing_fields = [f for f in required_fields if f not in vehicle_info]
+                        result.log_failure(f"Vehicle data structure for {vehicle['number']}", 
+                                         f"Missing fields: {missing_fields}")
+                else:
+                    result.log_failure(f"Vehicle verification for {vehicle['number']}", 
+                                     f"Invalid response: {data}")
+            else:
+                result.log_failure(f"Vehicle verification for {vehicle['number']}", 
+                                 f"Status {response.status_code}: {response.text}")
+        except Exception as e:
+            result.log_failure(f"Vehicle verification for {vehicle['number']}", str(e))
+    
+    # Test invalid vehicle number formats
+    print(f"\n--- Testing Invalid Vehicle Number Formats ---")
+    invalid_vehicles = [
+        {"number": "KA1AB123", "reason": "too short"},
+        {"number": "INVALID123", "reason": "wrong pattern"},
+        {"number": "123456789", "reason": "no state code"},
+        {"number": "AB01CD12345", "reason": "too long"},
+        {"number": "", "reason": "empty"},
+        {"number": "XX01YZ1234", "reason": "unsupported state code"}
+    ]
+    
+    for vehicle in invalid_vehicles:
+        try:
+            vehicle_data = {
+                "vehicle_number": vehicle["number"],
+                "vehicle_type": "car"
+            }
+            response = make_request("POST", "/driver/verify-vehicle", vehicle_data, headers)
+            
+            if response.status_code == 200:
+                data = response.json()
+                if not data.get("success"):
+                    result.log_success(f"Invalid vehicle rejection: {vehicle['number']} ({vehicle['reason']})")
+                else:
+                    result.log_failure(f"Invalid vehicle handling for {vehicle['number']}", 
+                                     f"Should have been rejected but was accepted: {data}")
+            else:
+                # Some invalid formats might return 400, which is also acceptable
+                if response.status_code == 400:
+                    result.log_success(f"Invalid vehicle rejection: {vehicle['number']} ({vehicle['reason']})")
+                else:
+                    result.log_failure(f"Invalid vehicle handling for {vehicle['number']}", 
+                                     f"Unexpected status {response.status_code}: {response.text}")
+        except Exception as e:
+            result.log_failure(f"Invalid vehicle handling for {vehicle['number']}", str(e))
+    
+    # Test different vehicle types
+    print(f"\n--- Testing Different Vehicle Types ---")
+    vehicle_types = ["bike", "auto", "car", "suv"]
+    
+    for vtype in vehicle_types:
+        try:
+            vehicle_data = {
+                "vehicle_number": "KA05XY7890",
+                "vehicle_type": vtype
+            }
+            response = make_request("POST", "/driver/verify-vehicle", vehicle_data, headers)
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success") and data.get("vehicle_data"):
+                    vehicle_info = data["vehicle_data"]
+                    # Check if vehicle_class reflects the requested type or defaults properly
+                    result.log_success(f"Vehicle verification with type: {vtype}")
+                else:
+                    result.log_failure(f"Vehicle verification with type {vtype}", f"Failed: {data}")
+            else:
+                result.log_failure(f"Vehicle verification with type {vtype}", 
+                                 f"Status {response.status_code}: {response.text}")
+        except Exception as e:
+            result.log_failure(f"Vehicle verification with type {vtype}", str(e))
+    
+    # Test unauthorized access (without token)
+    print(f"\n--- Testing Unauthorized Access ---")
+    try:
+        vehicle_data = {
+            "vehicle_number": "KA01AB1234",
+            "vehicle_type": "car"
+        }
+        response = make_request("POST", "/driver/verify-vehicle", vehicle_data)
+        
+        if response.status_code == 401 or response.status_code == 403:
+            result.log_success("Unauthorized access properly rejected")
+        else:
+            result.log_failure("Unauthorized access handling", 
+                             f"Should return 401/403 but got {response.status_code}")
+    except Exception as e:
+        result.log_failure("Unauthorized access handling", str(e))
+    
+    # Test integration with driver profile creation
+    print(f"\n--- Testing Integration with Driver Profile ---")
+    try:
+        # First verify a vehicle
+        vehicle_data = {
+            "vehicle_number": "TN09PQ5678",
+            "vehicle_type": "auto"
+        }
+        verify_response = make_request("POST", "/driver/verify-vehicle", vehicle_data, headers)
+        
+        if verify_response.status_code == 200 and verify_response.json().get("success"):
+            result.log_success("Vehicle verified before profile creation")
+            
+            # Now create driver profile with the same vehicle number
+            profile_data = {
+                "vehicle_type": "auto",
+                "vehicle_number": "TN09PQ5678",
+                "license_number": "DL1234567890"
+            }
+            profile_response = make_request("POST", "/driver/profile", profile_data, headers)
+            
+            if profile_response.status_code == 200:
+                profile_data = profile_response.json()
+                if "profile" in profile_data:
+                    result.log_success("Driver profile created with verified vehicle")
+                    
+                    # Verify auto-assigned rates work with vehicle verification
+                    profile_info = profile_data["profile"]
+                    if profile_info.get("per_km_rate") == 8.0:  # Auto rate
+                        result.log_success("Auto-assigned rate applied correctly for auto vehicle")
+                    else:
+                        result.log_failure("Auto-assigned rate", 
+                                         f"Expected 8.0 for auto, got {profile_info.get('per_km_rate')}")
+                else:
+                    result.log_failure("Driver profile creation", f"Invalid response: {profile_data}")
+            else:
+                result.log_failure("Driver profile creation", 
+                                 f"Status {profile_response.status_code}: {profile_response.text}")
+        else:
+            result.log_failure("Vehicle verification for profile integration", 
+                             f"Failed to verify vehicle: {verify_response.text}")
+    except Exception as e:
+        result.log_failure("Vehicle verification and profile integration", str(e))
+
 def test_authentication_system(result: TestResult):
     """Test user registration and login"""
     global driver_token, rider_token, driver_id, rider_id
