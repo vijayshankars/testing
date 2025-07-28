@@ -839,7 +839,7 @@ const DriverDashboard = () => {
                 <p className="font-medium">No ride requests nearby</p>
                 <p className="text-sm">New requests will appear here automatically</p>
                 <p className="text-xs text-gray-400 mt-2">
-                  Searching within 10km radius • Last updated: {new Date().toLocaleTimeString()}
+                  Searching within 25km radius • Last updated: {new Date().toLocaleTimeString()}
                 </p>
               </div>
             ) : (
