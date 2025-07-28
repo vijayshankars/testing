@@ -372,7 +372,174 @@ async def verify_otp_via_twilio(phone_number: str, code: str) -> bool:
         demo_otps = ["123456", "000000"]  # Demo OTPs for testing
         return code in demo_otps
 
-# Auth Routes
+# OTP Authentication Routes
+@api_router.post("/auth/send-otp", response_model=Dict[str, Any])
+async def send_otp(request: PhoneNumberRequest):
+    try:
+        # Validate phone number
+        formatted_phone = validate_phone_number(request.phone_number)
+        
+        # Check if user exists
+        existing_user = await db.users.find_one({"phone": formatted_phone})
+        
+        # Generate OTP session
+        otp_code = generate_otp()
+        otp_session = OTPSession(
+            phone_number=formatted_phone,
+            user_type=request.user_type,
+            otp_code=otp_code
+        )
+        
+        # Store OTP session
+        await db.otp_sessions.insert_one(otp_session.dict())
+        
+        # Send OTP
+        if twilio_account_sid and twilio_account_sid.startswith('AC_demo'):
+            # Demo mode
+            return {
+                "success": True,
+                "message": f"Demo OTP sent to {formatted_phone}",
+                "demo_otp": otp_code,  # Only for demo
+                "is_existing_user": bool(existing_user),
+                "demo_mode": True
+            }
+        else:
+            # Real Twilio mode
+            sms_result = await send_otp_via_twilio(formatted_phone)
+            return {
+                "success": True,
+                "message": f"OTP sent to {formatted_phone}",
+                "is_existing_user": bool(existing_user),
+                "demo_mode": False
+            }
+            
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error sending OTP: {e}")
+        raise HTTPException(status_code=500, detail="Failed to send OTP")
+
+@api_router.post("/auth/verify-otp", response_model=AuthResponse)
+async def verify_otp(request: OTPVerificationRequest):
+    try:
+        # Validate phone number
+        formatted_phone = validate_phone_number(request.phone_number)
+        
+        # Find active OTP session
+        otp_session = await db.otp_sessions.find_one({
+            "phone_number": formatted_phone,
+            "user_type": request.user_type,
+            "is_verified": False,
+            "expires_at": {"$gt": datetime.utcnow()}
+        })
+        
+        if not otp_session:
+            raise HTTPException(status_code=400, detail="Invalid or expired OTP session")
+        
+        # Check attempts limit
+        if otp_session["attempts"] >= 3:
+            raise HTTPException(status_code=400, detail="Too many OTP attempts. Please request a new OTP.")
+        
+        # Verify OTP
+        is_valid = False
+        if twilio_account_sid and twilio_account_sid.startswith('AC_demo'):
+            # Demo mode - check against stored OTP
+            is_valid = request.otp_code == otp_session["otp_code"]
+        else:
+            # Real Twilio mode
+            is_valid = await verify_otp_via_twilio(formatted_phone, request.otp_code)
+        
+        # Update attempts
+        await db.otp_sessions.update_one(
+            {"_id": otp_session["_id"]},
+            {"$inc": {"attempts": 1}}
+        )
+        
+        if not is_valid:
+            return AuthResponse(
+                success=False,
+                message="Invalid OTP. Please try again."
+            )
+        
+        # Mark OTP as verified
+        await db.otp_sessions.update_one(
+            {"_id": otp_session["_id"]},
+            {"$set": {"is_verified": True}}
+        )
+        
+        # Check if user exists
+        existing_user = await db.users.find_one({"phone": formatted_phone})
+        
+        if existing_user:
+            # Existing user login
+            # Verify user type matches
+            if existing_user["user_type"] != request.user_type:
+                raise HTTPException(
+                    status_code=400, 
+                    detail=f"This number is registered as {existing_user['user_type']}, not {request.user_type}"
+                )
+            
+            # Generate JWT token
+            token = create_jwt_token(existing_user["id"], existing_user["user_type"])
+            
+            return AuthResponse(
+                success=True,
+                message="Login successful",
+                user_data={
+                    "id": existing_user["id"],
+                    "phone": existing_user["phone"],
+                    "name": existing_user["name"],
+                    "email": existing_user.get("email", ""),
+                    "user_type": existing_user["user_type"]
+                },
+                token=token,
+                is_new_user=False
+            )
+        
+        else:
+            # New user registration
+            if not request.name or len(request.name.strip()) < 2:
+                raise HTTPException(status_code=400, detail="Name is required for new user registration")
+            
+            # Create new user
+            new_user = User(
+                phone=formatted_phone,
+                email=f"{formatted_phone.replace('+', '')}@rideshare.app",  # Generate email
+                name=request.name.strip(),
+                user_type=request.user_type
+            )
+            
+            user_dict = new_user.dict()
+            user_dict["password"] = hash_password("mobile_auth")  # Dummy password for mobile auth users
+            user_dict["is_mobile_verified"] = True
+            user_dict["created_via"] = "mobile_otp"
+            
+            await db.users.insert_one(user_dict)
+            
+            # Generate JWT token
+            token = create_jwt_token(new_user.id, new_user.user_type)
+            
+            return AuthResponse(
+                success=True,
+                message="Registration successful",
+                user_data={
+                    "id": new_user.id,
+                    "phone": new_user.phone,
+                    "name": new_user.name,
+                    "email": new_user.email,
+                    "user_type": new_user.user_type
+                },
+                token=token,
+                is_new_user=True
+            )
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error verifying OTP: {e}")
+        raise HTTPException(status_code=500, detail="OTP verification failed")
+
+# Legacy Auth Routes (keep for backward compatibility)
 @api_router.post("/auth/register", response_model=UserResponse)
 async def register(user_data: UserCreate):
     # Check if user already exists
@@ -385,6 +552,7 @@ async def register(user_data: UserCreate):
     user = User(**user_data.dict(exclude={"password"}))
     user_dict = user.dict()
     user_dict["password"] = hashed_password
+    user_dict["created_via"] = "email_password"
     
     await db.users.insert_one(user_dict)
     
