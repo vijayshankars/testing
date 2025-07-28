@@ -39,7 +39,7 @@ class DriverProfileEnhancementsTest:
         """Create a test driver user via mobile OTP authentication"""
         try:
             # Step 1: Send OTP
-            phone_number = "+91 9876543212"  # Test driver phone
+            phone_number = "+91 8876543212"  # Different test driver phone
             otp_request = {
                 "phone_number": phone_number,
                 "user_type": "driver"
