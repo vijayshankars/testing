@@ -362,14 +362,50 @@ def test_error_scenarios(result: TestResult):
     print("5. ERROR SCENARIOS TESTING")
     print(f"{'='*80}")
     
-    if not driver_token or not ride_id:
+    if not driver_token or not rider_token:
         result.log_failure("Error scenarios", "Required data not available")
+        return
+    
+    # Create a new ride for error testing
+    test_ride_id = None
+    test_ride_otp = None
+    
+    try:
+        ride_data = {
+            "pickup_location": CHENNAI_LOCATIONS["pickup"],
+            "drop_location": CHENNAI_LOCATIONS["drop"],
+            "estimated_distance": 3.5,
+            "estimated_fare": 80.0
+        }
+        
+        headers = get_auth_headers(rider_token)
+        response = make_request("POST", "/rider/rides", ride_data, headers)
+        
+        if response.status_code == 200:
+            data = response.json()
+            test_ride_id = data["id"]
+            
+            # Driver accepts this test ride
+            headers = get_auth_headers(driver_token)
+            response = make_request("POST", f"/driver/accept-ride/{test_ride_id}", {}, headers)
+            
+            if response.status_code == 200:
+                data = response.json()
+                test_ride_otp = data["ride_otp"]
+            else:
+                result.log_failure("Create test ride for errors", f"Accept failed: {response.status_code}")
+                return
+        else:
+            result.log_failure("Create test ride for errors", f"Create failed: {response.status_code}")
+            return
+    except Exception as e:
+        result.log_failure("Create test ride for errors", str(e))
         return
     
     # Test invalid OTP
     try:
         verify_data = {
-            "ride_id": ride_id,
+            "ride_id": test_ride_id,
             "otp_code": "9999"  # Invalid OTP
         }
         
@@ -386,15 +422,16 @@ def test_error_scenarios(result: TestResult):
     # Test wrong driver trying to verify (create another driver)
     try:
         # Create another driver
+        wrong_driver_phone = f"+91 987656{TIMESTAMP[:4]}"
         otp_data = {
-            "phone_number": "+91 9876543214",  # Different number
+            "phone_number": wrong_driver_phone,
             "user_type": "driver"
         }
         response = make_request("POST", "/auth/send-otp", otp_data)
         
         if response.status_code == 200:
             verify_data = {
-                "phone_number": "+91 9876543214",
+                "phone_number": wrong_driver_phone,
                 "otp_code": DEMO_OTP,
                 "user_type": "driver",
                 "name": "Wrong Driver"
@@ -406,8 +443,8 @@ def test_error_scenarios(result: TestResult):
                 
                 # Try to verify OTP with wrong driver
                 verify_data = {
-                    "ride_id": ride_id,
-                    "otp_code": "1234"  # Any OTP
+                    "ride_id": test_ride_id,
+                    "otp_code": test_ride_otp  # Correct OTP but wrong driver
                 }
                 
                 headers = get_auth_headers(wrong_driver_token)
@@ -424,22 +461,37 @@ def test_error_scenarios(result: TestResult):
     except Exception as e:
         result.log_failure("Wrong driver test", str(e))
     
-    # Test verifying already started ride
+    # Now verify the test ride with correct OTP to start it
     try:
         verify_data = {
-            "ride_id": ride_id,
-            "otp_code": "1234"  # Any OTP
+            "ride_id": test_ride_id,
+            "otp_code": test_ride_otp
         }
         
         headers = get_auth_headers(driver_token)
         response = make_request("POST", "/driver/verify-ride-otp", verify_data, headers)
         
-        if response.status_code == 404:
-            result.log_success("Already started ride correctly prevents double verification (404 error)")
+        if response.status_code == 200:
+            # Test verifying already started ride
+            try:
+                verify_data = {
+                    "ride_id": test_ride_id,
+                    "otp_code": test_ride_otp  # Same OTP
+                }
+                
+                headers = get_auth_headers(driver_token)
+                response = make_request("POST", "/driver/verify-ride-otp", verify_data, headers)
+                
+                if response.status_code == 404:
+                    result.log_success("Already started ride correctly prevents double verification (404 error)")
+                else:
+                    result.log_failure("Double verification test", f"Expected 404, got {response.status_code}: {response.text}")
+            except Exception as e:
+                result.log_failure("Double verification test", str(e))
         else:
-            result.log_failure("Double verification test", f"Expected 404, got {response.status_code}: {response.text}")
+            result.log_failure("Start test ride", f"Status {response.status_code}: {response.text}")
     except Exception as e:
-        result.log_failure("Double verification test", str(e))
+        result.log_failure("Start test ride", str(e))
 
 def test_complete_ride_flow(result: TestResult):
     """Test 6: Test complete ride flow from request to completion"""
