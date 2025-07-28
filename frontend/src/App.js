@@ -1841,6 +1841,308 @@ const UPIPaymentModal = ({ ride, onClose, onPaymentSuccess }) => {
     </div>
   );
 };
+
+// Mobile OTP Authentication Component
+const MobileOTPAuth = ({ onSuccess }) => {
+  const [step, setStep] = useState(1); // 1: phone input, 2: OTP input
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+  const [userType, setUserType] = useState('rider');
+  const [userName, setUserName] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [isExistingUser, setIsExistingUser] = useState(false);
+  const [demoOtp, setDemoOtp] = useState('');
+  const [resendTimer, setResendTimer] = useState(0);
+
+  // Auto-format phone number
+  const formatPhoneNumber = (value) => {
+    // Remove all non-digit characters
+    const numbers = value.replace(/\D/g, '');
+    
+    // Auto-add +91 for Indian numbers
+    if (numbers.length <= 10 && !value.startsWith('+')) {
+      return numbers.length > 0 ? `+91 ${numbers}` : '';
+    }
+    
+    return value;
+  };
+
+  const handlePhoneChange = (e) => {
+    const formatted = formatPhoneNumber(e.target.value);
+    setPhoneNumber(formatted);
+  };
+
+  const sendOTP = async () => {
+    if (!phoneNumber || phoneNumber.length < 10) {
+      setError('Please enter a valid phone number');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await axios.post(`${API}/auth/send-otp`, {
+        phone_number: phoneNumber,
+        user_type: userType
+      });
+
+      if (response.data.success) {
+        setIsExistingUser(response.data.is_existing_user);
+        if (response.data.demo_otp) {
+          setDemoOtp(response.data.demo_otp);
+        }
+        setStep(2);
+        startResendTimer();
+      }
+    } catch (error) {
+      setError(error.response?.data?.detail || 'Failed to send OTP');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const verifyOTP = async () => {
+    if (!otpCode || otpCode.length !== 6) {
+      setError('Please enter a valid 6-digit OTP');
+      return;
+    }
+
+    if (!isExistingUser && (!userName || userName.trim().length < 2)) {
+      setError('Please enter your name');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await axios.post(`${API}/auth/verify-otp`, {
+        phone_number: phoneNumber,
+        otp_code: otpCode,
+        user_type: userType,
+        name: userName
+      });
+
+      if (response.data.success) {
+        // Store auth data
+        localStorage.setItem('token', response.data.token);
+        localStorage.setItem('user', JSON.stringify(response.data.user_data));
+        
+        onSuccess(response.data.user_data, response.data.token);
+      } else {
+        setError(response.data.message);
+      }
+    } catch (error) {
+      setError(error.response?.data?.detail || 'OTP verification failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const startResendTimer = () => {
+    setResendTimer(60);
+    const timer = setInterval(() => {
+      setResendTimer((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const resendOTP = () => {
+    setOtpCode('');
+    setError('');
+    sendOTP();
+  };
+
+  const goBack = () => {
+    setStep(1);
+    setOtpCode('');
+    setError('');
+    setDemoOtp('');
+  };
+
+  return (
+    <div className="w-full max-w-md">
+      {step === 1 ? (
+        // Phone Number Input Step
+        <div className="space-y-6">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              Enter your mobile number
+            </h2>
+            <p className="text-gray-600">
+              We'll send you an OTP to verify your number
+            </p>
+          </div>
+
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
+
+          {/* User Type Selection */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-3">I am a</label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                className={`p-4 rounded-lg border-2 transition-all ${
+                  userType === 'rider'
+                    ? 'border-blue-500 bg-blue-50 text-blue-600'
+                    : 'border-gray-300 text-gray-600 hover:border-gray-400'
+                }`}
+                onClick={() => setUserType('rider')}
+              >
+                <Users className="w-6 h-6 mx-auto mb-2" />
+                <span className="font-medium">Rider</span>
+              </button>
+              <button
+                type="button"
+                className={`p-4 rounded-lg border-2 transition-all ${
+                  userType === 'driver'
+                    ? 'border-blue-500 bg-blue-50 text-blue-600'
+                    : 'border-gray-300 text-gray-600 hover:border-gray-400'
+                }`}
+                onClick={() => setUserType('driver')}
+              >
+                <Car className="w-6 h-6 mx-auto mb-2" />
+                <span className="font-medium">Driver</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Phone Number Input */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Mobile Number
+            </label>
+            <div className="relative">
+              <Phone className="w-5 h-5 text-gray-400 absolute left-3 top-3" />
+              <input
+                type="tel"
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
+                placeholder="+91 98765 43210"
+                value={phoneNumber}
+                onChange={handlePhoneChange}
+                maxLength={20}
+              />
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              We support international numbers
+            </p>
+          </div>
+
+          <button
+            onClick={sendOTP}
+            disabled={loading || !phoneNumber}
+            className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+          >
+            {loading ? 'Sending OTP...' : 'Send OTP'}
+          </button>
+        </div>
+      ) : (
+        // OTP Verification Step
+        <div className="space-y-6">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Smartphone className="w-8 h-8 text-blue-600" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              Verify your number
+            </h2>
+            <p className="text-gray-600">
+              Enter the 6-digit code sent to
+            </p>
+            <p className="font-medium text-gray-900">{phoneNumber}</p>
+          </div>
+
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
+
+          {demoOtp && (
+            <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg text-sm">
+              <strong>Demo Mode:</strong> Use OTP: <code className="font-mono font-bold">{demoOtp}</code>
+            </div>
+          )}
+
+          {/* Name input for new users */}
+          {!isExistingUser && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Your Name
+              </label>
+              <input
+                type="text"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Enter your full name"
+                value={userName}
+                onChange={(e) => setUserName(e.target.value)}
+              />
+            </div>
+          )}
+
+          {/* OTP Input */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Enter OTP
+            </label>
+            <input
+              type="text"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center text-2xl font-mono tracking-widest"
+              placeholder="000000"
+              value={otpCode}
+              onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              maxLength={6}
+            />
+          </div>
+
+          {/* Resend OTP */}
+          <div className="text-center">
+            {resendTimer > 0 ? (
+              <p className="text-sm text-gray-500">
+                Resend OTP in {resendTimer} seconds
+              </p>
+            ) : (
+              <button
+                onClick={resendOTP}
+                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+              >
+                Resend OTP
+              </button>
+            )}
+          </div>
+
+          <div className="space-y-3">
+            <button
+              onClick={verifyOTP}
+              disabled={loading || otpCode.length !== 6}
+              className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+            >
+              {loading ? 'Verifying...' : (isExistingUser ? 'Login' : 'Create Account')}
+            </button>
+
+            <button
+              onClick={goBack}
+              className="w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              Change Number
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 const ProtectedRoute = ({ children, requiredUserType }) => {
   const { user, loading } = useAuth();
 
