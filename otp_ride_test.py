@@ -15,7 +15,7 @@ TIMEOUT = 30
 
 # Test data for OTP verification testing
 RIDER_PHONE = "+91 9876543210"
-DRIVER_PHONE = "+91 9876543211"
+DRIVER_PHONE = "+91 9876543213"  # Changed to avoid conflicts
 DEMO_OTP = "123456"
 
 # Chennai locations for testing
