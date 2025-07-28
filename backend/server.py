@@ -379,6 +379,11 @@ def generate_otp() -> str:
     import random
     return str(random.randint(100000, 999999))
 
+def generate_ride_otp() -> str:
+    """Generate a 4-digit ride verification OTP"""
+    import random
+    return str(random.randint(1000, 9999))
+
 async def send_otp_via_twilio(phone_number: str) -> Dict[str, Any]:
     """Send OTP via Twilio or simulate in demo mode"""
     if twilio_client and twilio_verify_service and not twilio_account_sid.startswith('AC_demo'):
