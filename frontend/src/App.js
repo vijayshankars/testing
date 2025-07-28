@@ -1266,10 +1266,10 @@ const RiderDashboard = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Pickup Location</label>
                   <LocationAutocomplete
-                    placeholder="Enter pickup location"
+                    placeholder="Search pickup location..."
                     value={pickupLocation}
                     onChange={setPickupLocation}
-                    onLocationSelect={(location) => handleLocationSelect('pickup', location)}
+                    onLocationSelect={(prediction) => handleLocationSelect('pickup', prediction)}
                     showCurrentLocation={true}
                     onUseCurrentLocation={useCurrentLocation}
                   />
@@ -1278,10 +1278,10 @@ const RiderDashboard = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Drop Location</label>
                   <LocationAutocomplete
-                    placeholder="Enter drop location"
+                    placeholder="Search drop location..."
                     value={dropLocation}
                     onChange={setDropLocation}
-                    onLocationSelect={(location) => handleLocationSelect('drop', location)}
+                    onLocationSelect={(prediction) => handleLocationSelect('drop', prediction)}
                   />
                 </div>
                 
