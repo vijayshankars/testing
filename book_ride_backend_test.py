@@ -105,11 +105,11 @@ def test_rider_authentication(result: TestResult):
     try:
         verify_data = {
             "phone_number": test_phone,
-            "otp_code": demo_otp,
+            "otp_code": "123456",  # Use standard demo OTP
             "user_type": "rider",
             "name": "Test Rider Book Ride"
         }
-        print(f"DEBUG: Verifying with OTP: {demo_otp}")
+        print(f"DEBUG: Verifying with standard demo OTP: 123456")
         response = make_request("POST", "/auth/verify-otp", verify_data)
         if response.status_code == 200:
             data = response.json()
