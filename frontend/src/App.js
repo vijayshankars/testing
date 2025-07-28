@@ -3680,7 +3680,7 @@ const AdminDashboard = () => {
         {/* User Management */}
         <div className="bg-white rounded-lg shadow">
           <div className="px-6 py-4 border-b border-gray-200">
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-semibold text-gray-900">User Management</h2>
               <div className="flex space-x-2">
                 {['all', 'rider', 'driver'].map((type) => (
@@ -3700,6 +3700,49 @@ const AdminDashboard = () => {
                   </button>
                 ))}
               </div>
+            </div>
+
+            {/* Mobile Number Search */}
+            <div className="flex items-center space-x-3 bg-gray-50 rounded-lg p-3">
+              <div className="flex items-center text-gray-600">
+                <Phone className="w-5 h-5 mr-2" />
+                <span className="text-sm font-medium">Search by Mobile Number:</span>
+              </div>
+              <div className="flex-1 flex items-center space-x-2">
+                <input
+                  type="text"
+                  value={mobileSearch}
+                  onChange={(e) => setMobileSearch(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      handleMobileSearch();
+                    }
+                  }}
+                  placeholder="Enter mobile number (e.g., 9876543210 or +91 9876543210)"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                />
+                <button
+                  onClick={handleMobileSearch}
+                  disabled={isSearching || !mobileSearch.trim()}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                >
+                  {isSearching ? 'Searching...' : 'Search'}
+                </button>
+                {mobileSearch && (
+                  <button
+                    onClick={clearSearch}
+                    disabled={isSearching}
+                    className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 disabled:opacity-50 transition-colors text-sm font-medium"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+              {users.length > 0 && mobileSearch && (
+                <div className="text-sm text-green-600 font-medium">
+                  Found {users.length} user{users.length > 1 ? 's' : ''}
+                </div>
+              )}
             </div>
           </div>
 
