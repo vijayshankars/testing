@@ -2319,6 +2319,9 @@ def main():
     # Run the specific nearby ride requests scenario test
     test_nearby_ride_requests_scenario(result)
     
+    # Test mobile number search functionality in admin dashboard
+    test_mobile_number_search_functionality(result)
+    
     # Print summary
     result.summary()
     
