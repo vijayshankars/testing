@@ -1839,16 +1839,25 @@ const RiderDashboard = () => {
 
                       {/* Show ride OTP for accepted rides */}
                       {ride.status === 'accepted' && ride.ride_otp && (
-                        <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-3">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium text-green-800">Ride OTP:</span>
-                            <span className="text-2xl font-bold text-green-600 font-mono">
+                        <div className="bg-green-50 border-2 border-green-200 rounded-lg p-4 mb-3 animate-pulse">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center">
+                              <CheckCircle className="w-6 h-6 text-green-600 mr-2" />
+                              <span className="text-lg font-bold text-green-800">Your Ride OTP</span>
+                            </div>
+                            <span className="text-3xl font-bold text-green-600 font-mono tracking-wider bg-white px-3 py-1 rounded-lg border-2 border-green-300">
                               {ride.ride_otp}
                             </span>
                           </div>
-                          <p className="text-xs text-green-600 mt-1">
-                            Share this OTP with your driver to start the ride
-                          </p>
+                          <div className="bg-white rounded-lg p-3 border border-green-200">
+                            <p className="text-sm text-green-700 mb-2">
+                              <strong>📱 Share this OTP with your driver to start the ride</strong>
+                            </p>
+                            <p className="text-xs text-green-600">
+                              ✅ Driver will ask for this 4-digit code before starting your journey<br/>
+                              🔒 Keep this code safe and only share with your assigned driver
+                            </p>
+                          </div>
                         </div>
                       )}
                       
