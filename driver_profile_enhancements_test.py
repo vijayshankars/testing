@@ -205,7 +205,9 @@ class DriverProfileEnhancementsTest:
         for i, test_case in enumerate(vehicle_test_cases):
             try:
                 # Create a new driver for each vehicle type test
-                phone_number = f"+91 987654321{i+3}"
+                import time
+                timestamp = int(time.time())
+                phone_number = f"+91 {timestamp % 10000000000:010d}"  # Generate unique phone number
                 
                 # Send OTP
                 otp_request = {
