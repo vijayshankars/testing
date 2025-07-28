@@ -960,8 +960,8 @@ const RiderDashboard = () => {
       fetchAvailableDrivers(location.lat, location.lng);
     } catch (error) {
       console.error('Error getting location:', error);
-      // Use fallback location (Delhi)
-      const fallbackLocation = { lat: 28.6139, lng: 77.2090 };
+      // Use fallback location (Chennai)
+      const fallbackLocation = { lat: 13.0827, lng: 80.2707 };
       setCurrentLocation(fallbackLocation);
       fetchAvailableDrivers(fallbackLocation.lat, fallbackLocation.lng);
     }
