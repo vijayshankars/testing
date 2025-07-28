@@ -831,17 +831,36 @@ const RiderDashboard = () => {
   };
 
   const calculateFare = () => {
-    if (!pickupLocation || !dropLocation || !currentLocation) return;
+    if (!pickupLocation || !dropLocation || !currentLocation) {
+      alert('Please enter both pickup and drop locations');
+      return;
+    }
 
-    // For demo, we'll use a simple calculation
-    // In real app, you'd use Google Distance Matrix API
-    const mockDistance = Math.random() * 10 + 2; // Random distance between 2-12 km
-    const avgRatePerKm = availableDrivers.length > 0 
-      ? availableDrivers.reduce((sum, driver) => sum + driver.per_km_rate, 0) / availableDrivers.length
-      : 15; // Default rate
+    // If both locations are selected and map is available, calculate actual route
+    if (mapInstance && pickupMarker && dropMarker && window.google) {
+      const pickupPos = pickupMarker.getPosition();
+      const dropPos = dropMarker.getPosition();
+      
+      // Calculate route using Google Directions API
+      calculateRoute(pickupPos, dropPos, (result) => {
+        const distance = result.distance;
+        const avgRatePerKm = availableDrivers.length > 0 
+          ? availableDrivers.reduce((sum, driver) => sum + driver.per_km_rate, 0) / availableDrivers.length
+          : 15; // Default rate
 
-    setEstimatedDistance(mockDistance);
-    setEstimatedFare(Math.round(mockDistance * avgRatePerKm));
+        setEstimatedDistance(distance);
+        setEstimatedFare(Math.round(distance * avgRatePerKm));
+      });
+    } else {
+      // Fallback calculation if markers aren't available
+      const mockDistance = Math.random() * 10 + 2; // Random distance between 2-12 km
+      const avgRatePerKm = availableDrivers.length > 0 
+        ? availableDrivers.reduce((sum, driver) => sum + driver.per_km_rate, 0) / availableDrivers.length
+        : 15; // Default rate
+
+      setEstimatedDistance(mockDistance);
+      setEstimatedFare(Math.round(mockDistance * avgRatePerKm));
+    }
   };
 
   const requestRide = async () => {
