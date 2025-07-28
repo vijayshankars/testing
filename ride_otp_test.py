@@ -75,9 +75,11 @@ def test_ride_otp_generation_flow(result: TestResult):
     print("RIDE OTP GENERATION & VERIFICATION TESTING")
     print(f"{'='*60}")
     
-    # Test data
-    rider_phone = "+91 9876543210"  # As requested
-    driver_phone = "+91 9876543211"
+    # Test data - using unique phone numbers to avoid conflicts
+    import random
+    random_suffix = str(random.randint(1000, 9999))
+    rider_phone = f"+91 987654{random_suffix}"  # Based on requested format
+    driver_phone = f"+91 987654{str(int(random_suffix) + 1)}"
     
     rider_token = None
     driver_token = None
