@@ -90,6 +90,7 @@ def test_rider_authentication(result: TestResult):
             if data.get("success"):
                 result.log_success("Rider OTP sent successfully to +91 9876543210")
                 demo_otp = data.get("demo_otp", "123456")
+                print(f"DEBUG: Demo OTP received: {demo_otp}")
             else:
                 result.log_failure("Rider OTP send", f"Failed: {data}")
                 return None
