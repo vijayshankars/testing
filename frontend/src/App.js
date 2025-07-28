@@ -1701,10 +1701,18 @@ const RiderDashboard = () => {
   };
 
   const clearLocations = () => {
-    setPickupLocation('');
     setDropLocation('');
     setEstimatedFare(0);
     setEstimatedDistance(0);
+    clearDiscount();
+    
+    // Reset pickup to current location
+    if (currentLocation) {
+      const address = `Current Location (${currentLocation.lat.toFixed(4)}, ${currentLocation.lng.toFixed(4)})`;
+      setPickupLocation(address);
+    } else {
+      setPickupLocation('');
+    }
     
     // Clear markers
     if (pickupMarker) {
@@ -1716,10 +1724,16 @@ const RiderDashboard = () => {
       setDropMarker(null);
     }
     
-    // Reset map view to current location
+    // Reset map view to current location and re-add pickup marker
     if (mapInstance && currentLocation) {
       mapInstance.setCenter(currentLocation);
       mapInstance.setZoom(15);
+      
+      // Re-add pickup marker for current location
+      setTimeout(() => {
+        const address = `Current Location (${currentLocation.lat.toFixed(4)}, ${currentLocation.lng.toFixed(4)})`;
+        handleLocationSelect('pickup', address);
+      }, 500);
     }
   };
 
