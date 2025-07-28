@@ -659,7 +659,7 @@ async def verify_license_with_vahan(request: LicenseVerificationRequest, current
             # Store verification record (optional)
             verification_record = {
                 "license_number": license_number,
-                "user_id": current_user["user_id"],
+                "user_id": current_user["id"],
                 "verification_status": "VERIFIED",
                 "license_data": license_data,
                 "verified_at": datetime.utcnow()
