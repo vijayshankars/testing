@@ -697,6 +697,9 @@ async def razorpay_webhook(request: Request):
         
         return {"status": "processed"}
         
+    except HTTPException:
+        # Re-raise HTTP exceptions (like 400 for invalid signature)
+        raise
     except Exception as e:
         logger.error(f"Webhook processing error: {e}")
         raise HTTPException(status_code=500, detail="Webhook processing failed")
