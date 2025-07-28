@@ -138,6 +138,22 @@ class DriverProfileCreate(BaseModel):
 class LicenseVerificationRequest(BaseModel):
     license_number: str
 
+class DiscountCode(BaseModel):
+    code: str
+    discount_type: str  # 'percentage', 'fixed_amount', 'first_ride'
+    discount_value: float
+    min_fare_amount: Optional[float] = 0
+    max_discount_amount: Optional[float] = None
+    usage_limit: Optional[int] = None
+    valid_from: datetime
+    valid_until: datetime
+    is_active: bool = True
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+class ApplyDiscountRequest(BaseModel):
+    promo_code: str
+    ride_fare: float
+
 class DriverLocationUpdate(BaseModel):
     lat: float
     lng: float
