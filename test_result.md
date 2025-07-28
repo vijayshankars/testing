@@ -426,13 +426,11 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Authentication Flow Testing"
-    - "Rider Dashboard Testing"
-    - "Google Maps Integration Testing"
+    - "Driver Dashboard Testing"
   stuck_tasks:
     - "Driver Dashboard Testing"
-  test_all: true
-  test_priority: "high_first"
+  test_all: false
+  test_priority: "stuck_first"
 
 agent_communication:
     - agent: "testing"
