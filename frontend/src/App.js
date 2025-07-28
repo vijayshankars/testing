@@ -1974,8 +1974,25 @@ const RiderDashboard = () => {
                     <div key={ride.id} className="border border-gray-200 rounded-lg p-4">
                       <div className="flex justify-between items-start mb-2">
                         <div className="flex-1">
-                          <div className="font-medium mb-1">
-                            {ride.pickup_location.address} → {ride.drop_location.address}
+                          {/* Enhanced Route Display */}
+                          <div className="flex items-center mb-3">
+                            <div className="flex items-center bg-green-50 rounded-lg px-3 py-2 flex-1 mr-2">
+                              <MapPin className="w-4 h-4 text-green-600 mr-2 flex-shrink-0" />
+                              <span className="text-sm font-medium text-green-800 truncate">
+                                {ride.pickup_location?.address || 'Pickup location'}
+                              </span>
+                            </div>
+                            <Navigation className="w-4 h-4 text-gray-400 mx-1 flex-shrink-0" />
+                            <div className="flex items-center bg-red-50 rounded-lg px-3 py-2 flex-1 ml-2">
+                              <Navigation className="w-4 h-4 text-red-600 mr-2 flex-shrink-0" />
+                              <span className="text-sm font-medium text-red-800 truncate">
+                                {ride.drop_location?.address || 'Drop location'}
+                              </span>
+                            </div>
+                          </div>
+                          {/* Traditional text format */}
+                          <div className="font-medium mb-1 text-gray-600 text-sm">
+                            {ride.pickup_location?.address} → {ride.drop_location?.address}
                           </div>
                           <div className="text-sm text-gray-600 mb-2 flex items-center">
                             <IndianRupee className="w-3 h-3 mr-1" />
