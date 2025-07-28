@@ -1865,25 +1865,50 @@ const RiderDashboard = () => {
               
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Pickup Location</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <Navigation className="w-4 h-4 inline mr-2 text-red-600" />
+                    Where to? (Drop Location)
+                  </label>
                   <LocationAutocomplete
-                    placeholder="Search pickup location..."
-                    value={pickupLocation}
-                    onChange={setPickupLocation}
-                    onLocationSelect={(prediction) => handleLocationSelect('pickup', prediction)}
-                    showCurrentLocation={true}
-                    onUseCurrentLocation={useCurrentLocation}
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Drop Location</label>
-                  <LocationAutocomplete
-                    placeholder="Search drop location..."
+                    placeholder="Search destination..."
                     value={dropLocation}
                     onChange={setDropLocation}
                     onLocationSelect={(prediction) => handleLocationSelect('drop', prediction)}
                   />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <MapPin className="w-4 h-4 inline mr-2 text-green-600" />
+                    Pickup Location
+                  </label>
+                  <div className="relative">
+                    <LocationAutocomplete
+                      placeholder="Current location or search..."
+                      value={pickupLocation}
+                      onChange={setPickupLocation}
+                      onLocationSelect={(prediction) => handleLocationSelect('pickup', prediction)}
+                      showCurrentLocation={true}
+                      onUseCurrentLocation={useCurrentLocation}
+                    />
+                    {currentLocation && (
+                      <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                        <button
+                          onClick={useCurrentLocation}
+                          className="text-blue-600 hover:text-blue-800 text-sm bg-blue-50 px-2 py-1 rounded"
+                          title="Use current location"
+                        >
+                          📍 Current
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  {currentLocation && (
+                    <div className="mt-1 text-xs text-green-600 flex items-center">
+                      <CheckCircle className="w-3 h-3 mr-1" />
+                      Using your current location as pickup
+                    </div>
+                  )}
                 </div>
                 
                 <div className="grid grid-cols-2 gap-3">
