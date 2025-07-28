@@ -216,7 +216,7 @@ async def get_driver_profile(current_user: dict = Depends(get_current_user)):
     if current_user["user_type"] != "driver":
         raise HTTPException(status_code=403, detail="Only drivers can access driver profiles")
     
-    profile = await db.driver_profiles.find_one({"user_id": current_user["id"]})
+    profile = await db.driver_profiles.find_one({"user_id": current_user["id"]}, {"_id": 0})
     if not profile:
         raise HTTPException(status_code=404, detail="Driver profile not found")
     
