@@ -625,6 +625,24 @@ const DriverDashboard = () => {
                 </button>
               </div>
 
+              {/* Location Status */}
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Location Status</span>
+                  <div className="flex items-center">
+                    <div className={`w-2 h-2 rounded-full mr-2 ${currentLocation ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                    <span className="text-sm font-medium">
+                      {currentLocation ? 'Active' : 'Not Set'}
+                    </span>
+                  </div>
+                </div>
+                {currentLocation && (
+                  <div className="text-xs text-gray-600 mt-1">
+                    Lat: {currentLocation.lat.toFixed(4)}, Lng: {currentLocation.lng.toFixed(4)}
+                  </div>
+                )}
+              </div>
+
               {driverProfile && (
                 <>
                   <div className="p-3 bg-gray-50 rounded-lg">
