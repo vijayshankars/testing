@@ -1826,7 +1826,18 @@ const RiderDashboard = () => {
 
             {/* Current Rides */}
             <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold mb-4">Your Rides</h2>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-semibold">Your Rides</h2>
+                <button
+                  onClick={() => {
+                    setShowHistory(!showHistory);
+                    if (!showHistory) fetchRideHistory();
+                  }}
+                  className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                >
+                  {showHistory ? 'Hide History' : 'View History'}
+                </button>
+              </div>
               
               {currentRides.length === 0 ? (
                 <div className="text-center py-4 text-gray-500">
@@ -1856,6 +1867,21 @@ const RiderDashboard = () => {
                           {ride.status.replace('_', ' ')}
                         </span>
                       </div>
+
+                      {/* Show ride OTP for accepted rides */}
+                      {ride.status === 'accepted' && ride.ride_otp && (
+                        <div className="bg-green-50 border border-green-200 rounded p-3 mb-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium text-green-800">Ride OTP:</span>
+                            <span className="text-2xl font-bold text-green-600 font-mono">
+                              {ride.ride_otp}
+                            </span>
+                          </div>
+                          <p className="text-xs text-green-600 mt-1">
+                            Share this OTP with your driver to start the ride
+                          </p>
+                        </div>
+                      )}
                       
                       {ride.driver_info && (
                         <div className="text-sm text-gray-600 border-t pt-2 mt-2">
@@ -1865,9 +1891,20 @@ const RiderDashboard = () => {
                         </div>
                       )}
 
-                      {/* Payment button for accepted rides */}
-                      {ride.status === 'accepted' && ride.driver_info && (
-                        <div className="border-t pt-3 mt-3">
+                      {/* Action buttons */}
+                      <div className="border-t pt-3 mt-3 space-y-2">
+                        {/* Cancel button for requested/accepted rides */}
+                        {(ride.status === 'requested' || ride.status === 'accepted') && (
+                          <button
+                            onClick={() => cancelRide(ride.id)}
+                            className="w-full bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors"
+                          >
+                            Cancel Ride
+                          </button>
+                        )}
+
+                        {/* Payment button for accepted rides */}
+                        {ride.status === 'accepted' && ride.driver_info && !ride.ride_otp && (
                           <button
                             onClick={() => handlePayNow(ride)}
                             className="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center"
@@ -1875,18 +1912,16 @@ const RiderDashboard = () => {
                             <Smartphone className="w-4 h-4 mr-2" />
                             Pay Now with UPI
                           </button>
-                        </div>
-                      )}
+                        )}
 
-                      {/* Payment status for paid rides */}
-                      {ride.payment_status === 'paid' && (
-                        <div className="border-t pt-3 mt-3">
+                        {/* Payment status for paid rides */}
+                        {ride.payment_status === 'paid' && (
                           <div className="flex items-center text-green-600 text-sm">
                             <CheckCircle className="w-4 h-4 mr-2" />
                             Payment Completed
                           </div>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
