@@ -2411,6 +2411,350 @@ const MobileOTPAuth = ({ onSuccess }) => {
     </div>
   );
 };
+// Admin Dashboard Component
+const AdminDashboard = () => {
+  const [dashboardData, setDashboardData] = useState(null);
+  const [users, setUsers] = useState([]);
+  const [selectedUserType, setSelectedUserType] = useState('all');
+  const [loading, setLoading] = useState(true);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [showDocuments, setShowDocuments] = useState(false);
+  const [documents, setDocuments] = useState({});
+  
+  const { user, logout } = useAuth();
+
+  useEffect(() => {
+    fetchDashboardData();
+    fetchUsers();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      const response = await axios.get(`${API}/admin/dashboard`);
+      setDashboardData(response.data);
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    }
+  };
+
+  const fetchUsers = async (userType = null) => {
+    try {
+      const params = userType && userType !== 'all' ? `?user_type=${userType}` : '';
+      const response = await axios.get(`${API}/admin/users${params}`);
+      setUsers(response.data.users);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUserAction = async (userId, action) => {
+    try {
+      await axios.post(`${API}/admin/user-action`, {
+        user_id: userId,
+        action: action
+      });
+      
+      alert(`Action ${action} completed successfully!`);
+      fetchUsers(selectedUserType === 'all' ? null : selectedUserType);
+      fetchDashboardData();
+    } catch (error) {
+      console.error('Error performing action:', error);
+      alert('Failed to perform action');
+    }
+  };
+
+  const viewDocuments = async (userId) => {
+    try {
+      const response = await axios.get(`${API}/admin/driver-documents/${userId}`);
+      setDocuments(response.data);
+      setShowDocuments(true);
+    } catch (error) {
+      console.error('Error fetching documents:', error);
+      alert('Failed to load documents');
+    }
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-IN', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  if (loading && !dashboardData) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-100">
+      {/* Header */}
+      <div className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center">
+              <Settings className="w-8 h-8 text-blue-600 mr-3" />
+              <h1 className="text-xl font-bold text-gray-900">Admin Dashboard</h1>
+            </div>
+            <div className="flex items-center space-x-4">
+              <span className="text-sm text-gray-600">Welcome, {user?.name}</span>
+              <button
+                onClick={logout}
+                className="flex items-center text-gray-600 hover:text-gray-900"
+              >
+                <LogOut className="w-4 h-4 mr-1" />
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Statistics Cards */}
+        {dashboardData && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center">
+                <Users className="w-8 h-8 text-blue-600" />
+                <div className="ml-4">
+                  <h3 className="text-sm font-medium text-gray-500">Total Users</h3>
+                  <p className="text-2xl font-bold text-gray-900">{dashboardData.total_users}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center">
+                <Car className="w-8 h-8 text-green-600" />
+                <div className="ml-4">
+                  <h3 className="text-sm font-medium text-gray-500">Total Drivers</h3>
+                  <p className="text-2xl font-bold text-gray-900">{dashboardData.total_drivers}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center">
+                <Navigation className="w-8 h-8 text-purple-600" />
+                <div className="ml-4">
+                  <h3 className="text-sm font-medium text-gray-500">Total Rides</h3>
+                  <p className="text-2xl font-bold text-gray-900">{dashboardData.total_rides}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center">
+                <Clock className="w-8 h-8 text-orange-600" />
+                <div className="ml-4">
+                  <h3 className="text-sm font-medium text-gray-500">Pending Verifications</h3>
+                  <p className="text-2xl font-bold text-gray-900">{dashboardData.pending_verifications}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* User Management */}
+        <div className="bg-white rounded-lg shadow">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <div className="flex justify-between items-center">
+              <h2 className="text-lg font-semibold text-gray-900">User Management</h2>
+              <div className="flex space-x-2">
+                {['all', 'rider', 'driver'].map((type) => (
+                  <button
+                    key={type}
+                    onClick={() => {
+                      setSelectedUserType(type);
+                      fetchUsers(type === 'all' ? null : type);
+                    }}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      selectedUserType === type
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    {type.charAt(0).toUpperCase() + type.slice(1)}s
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    User
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Type
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Joined
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {users.map((user) => (
+                  <tr key={user.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">{user.name}</div>
+                        <div className="text-sm text-gray-500">{user.email}</div>
+                        <div className="text-sm text-gray-500">{user.phone}</div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        user.user_type === 'driver' 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-blue-100 text-blue-800'
+                      }`}>
+                        {user.user_type}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="space-y-1">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          user.is_active !== false 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {user.is_active !== false ? 'Active' : 'Inactive'}
+                        </span>
+                        {user.driver_profile && (
+                          <div>
+                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                              user.driver_profile.document_verified 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-yellow-100 text-yellow-800'
+                            }`}>
+                              {user.driver_profile.document_verified ? 'Verified' : 'Pending'}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {formatDate(user.created_at)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm space-x-2">
+                      <button
+                        onClick={() => handleUserAction(user.id, user.is_active !== false ? 'deactivate' : 'activate')}
+                        className={`px-3 py-1 rounded text-xs font-medium ${
+                          user.is_active !== false
+                            ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                            : 'bg-green-100 text-green-700 hover:bg-green-200'
+                        }`}
+                      >
+                        {user.is_active !== false ? 'Deactivate' : 'Activate'}
+                      </button>
+                      
+                      {user.user_type === 'driver' && user.driver_profile && (
+                        <>
+                          <button
+                            onClick={() => viewDocuments(user.id)}
+                            className="px-3 py-1 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded text-xs font-medium"
+                          >
+                            View Docs
+                          </button>
+                          
+                          {!user.driver_profile.document_verified && (
+                            <button
+                              onClick={() => handleUserAction(user.id, 'verify_driver')}
+                              className="px-3 py-1 bg-green-100 text-green-700 hover:bg-green-200 rounded text-xs font-medium"
+                            >
+                              Verify
+                            </button>
+                          )}
+                        </>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      {/* Document Modal */}
+      {showDocuments && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold text-gray-900">Driver Documents</h2>
+                <button
+                  onClick={() => setShowDocuments(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <XCircle className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {documents.license_document && (
+                  <div>
+                    <h3 className="font-semibold mb-2">Driver's License</h3>
+                    <div className="border rounded-lg p-4">
+                      <p className="text-sm text-gray-600 mb-2">
+                        File: {documents.license_document.name}
+                      </p>
+                      {documents.license_document.data && (
+                        <img
+                          src={documents.license_document.data}
+                          alt="Driver License"
+                          className="w-full h-64 object-contain bg-gray-100 rounded"
+                        />
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {documents.registration_document && (
+                  <div>
+                    <h3 className="font-semibold mb-2">Vehicle Registration</h3>
+                    <div className="border rounded-lg p-4">
+                      <p className="text-sm text-gray-600 mb-2">
+                        File: {documents.registration_document.name}
+                      </p>
+                      {documents.registration_document.data && (
+                        <img
+                          src={documents.registration_document.data}
+                          alt="Vehicle Registration"
+                          className="w-full h-64 object-contain bg-gray-100 rounded"
+                        />
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const ProtectedRoute = ({ children, requiredUserType }) => {
   const { user, loading } = useAuth();
 
