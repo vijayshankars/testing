@@ -63,6 +63,23 @@ else:
     logging.warning("Razorpay credentials not found in environment variables")
     razorpay_client = None
 
+# Initialize Twilio
+twilio_account_sid = os.environ.get('TWILIO_ACCOUNT_SID')
+twilio_auth_token = os.environ.get('TWILIO_AUTH_TOKEN')
+twilio_verify_service = os.environ.get('TWILIO_VERIFY_SERVICE')
+
+if twilio_account_sid and twilio_auth_token:
+    # For demo mode, we'll simulate Twilio functionality
+    if twilio_account_sid.startswith('AC_demo'):
+        twilio_client = None  # Demo mode
+        logging.info("Running in Twilio demo mode")
+    else:
+        twilio_client = Client(twilio_account_sid, twilio_auth_token)
+        logging.info("Twilio initialized successfully")
+else:
+    logging.warning("Twilio credentials not found in environment variables")
+    twilio_client = None
+
 # Create the main app without a prefix
 app = FastAPI(title="RideShare API")
 
