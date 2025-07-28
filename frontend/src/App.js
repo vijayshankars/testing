@@ -2393,10 +2393,14 @@ const LocationAutocomplete = ({
   );
 };
 
-// Document Upload Component
+// Enhanced Document Upload Component with Camera Support
 const DocumentUpload = ({ label, onFileSelect, selectedFile, required = false }) => {
   const [dragOver, setDragOver] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
+  const [stream, setStream] = useState(null);
   const fileInputRef = useRef(null);
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
 
   const handleFileSelect = (file) => {
     if (file && (file.type === 'image/jpeg' || file.type === 'image/png' || file.type === 'application/pdf')) {
@@ -2414,6 +2418,66 @@ const DocumentUpload = ({ label, onFileSelect, selectedFile, required = false })
     } else {
       alert('Please select a valid image (JPG, PNG) or PDF file');
     }
+  };
+
+  const startCamera = async () => {
+    try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          facingMode: 'environment' // Use back camera on mobile
+        } 
+      });
+      setStream(mediaStream);
+      setShowCamera(true);
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = mediaStream;
+      }
+    } catch (error) {
+      console.error('Error accessing camera:', error);
+      alert('Unable to access camera. Please check permissions or use file upload instead.');
+    }
+  };
+
+  const capturePhoto = () => {
+    if (videoRef.current && canvasRef.current) {
+      const canvas = canvasRef.current;
+      const video = videoRef.current;
+      
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0);
+      
+      canvas.toBlob((blob) => {
+        const timestamp = new Date().getTime();
+        const fileName = `captured_document_${timestamp}.jpg`;
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const fileData = {
+            name: fileName,
+            type: 'image/jpeg',
+            size: blob.size,
+            data: e.target.result
+          };
+          onFileSelect(fileData);
+          stopCamera();
+        };
+        reader.readAsDataURL(blob);
+      }, 'image/jpeg', 0.9);
+    }
+  };
+
+  const stopCamera = () => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
+    }
+    setShowCamera(false);
   };
 
   const handleDrop = (e) => {
@@ -2438,70 +2502,129 @@ const DocumentUpload = ({ label, onFileSelect, selectedFile, required = false })
         {label} {required && <span className="text-red-500">*</span>}
       </label>
       
-      <div
-        className={`border-2 border-dashed rounded-lg p-4 text-center transition-colors ${
-          dragOver
-            ? 'border-blue-400 bg-blue-50'
-            : selectedFile
-            ? 'border-green-400 bg-green-50'
-            : 'border-gray-300 bg-gray-50 hover:border-gray-400'
-        }`}
-        onDrop={handleDrop}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-      >
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/jpeg,image/png,application/pdf"
-          onChange={(e) => handleFileSelect(e.target.files[0])}
-          className="hidden"
-        />
-        
-        {selectedFile ? (
-          <div className="space-y-2">
-            <div className="flex items-center justify-center">
-              <CheckCircle className="w-8 h-8 text-green-600" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-green-700">{selectedFile.name}</p>
-              <p className="text-xs text-green-600">
-                {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-              </p>
-            </div>
+      {showCamera ? (
+        <div className="space-y-4">
+          <div className="relative bg-black rounded-lg overflow-hidden">
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              className="w-full h-64 object-cover"
+            />
+            <canvas ref={canvasRef} className="hidden" />
+          </div>
+          <div className="flex space-x-3">
             <button
               type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="text-blue-600 hover:text-blue-800 text-sm underline"
+              onClick={capturePhoto}
+              className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
             >
-              Change file
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              Capture Photo
+            </button>
+            <button
+              type="button"
+              onClick={stopCamera}
+              className="bg-gray-500 text-white py-2 px-4 rounded-lg hover:bg-gray-600 transition-colors"
+            >
+              Cancel
             </button>
           </div>
-        ) : (
-          <div className="space-y-2">
-            <div className="flex items-center justify-center">
-              <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
-                <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                </svg>
+        </div>
+      ) : (
+        <div
+          className={`border-2 border-dashed rounded-lg p-4 text-center transition-colors ${
+            dragOver
+              ? 'border-blue-400 bg-blue-50'
+              : selectedFile
+              ? 'border-green-400 bg-green-50'
+              : 'border-gray-300 bg-gray-50 hover:border-gray-400'
+          }`}
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+        >
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,application/pdf"
+            onChange={(e) => handleFileSelect(e.target.files[0])}
+            className="hidden"
+          />
+          
+          {selectedFile ? (
+            <div className="space-y-2">
+              <div className="flex items-center justify-center">
+                <CheckCircle className="w-8 h-8 text-green-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-green-700">{selectedFile.name}</p>
+                <p className="text-xs text-green-600">
+                  {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                </p>
+              </div>
+              <div className="flex space-x-4 justify-center">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="text-blue-600 hover:text-blue-800 text-sm underline"
+                >
+                  Change file
+                </button>
+                <button
+                  type="button"
+                  onClick={startCamera}
+                  className="text-blue-600 hover:text-blue-800 text-sm underline"
+                >
+                  Use camera
+                </button>
               </div>
             </div>
-            <div>
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="text-blue-600 hover:text-blue-800 font-medium"
-              >
-                Click to upload
-              </button>
-              <p className="text-sm text-gray-500">or drag and drop</p>
+          ) : (
+            <div className="space-y-3">
+              <div className="flex items-center justify-center">
+                <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
+                  <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  </svg>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="flex space-x-4 justify-center">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="text-blue-600 hover:text-blue-800 font-medium flex items-center"
+                  >
+                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    Upload File
+                  </button>
+                  <button
+                    type="button"
+                    onClick={startCamera}
+                    className="text-blue-600 hover:text-blue-800 font-medium flex items-center"
+                  >
+                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    Use Camera
+                  </button>
+                </div>
+                <p className="text-sm text-gray-500">or drag and drop</p>
+              </div>
+              <p className="text-xs text-gray-400">
+                JPG, PNG or PDF (Max 5MB)
+              </p>
             </div>
-            <p className="text-xs text-gray-400">
-              JPG, PNG or PDF (Max 5MB)
-            </p>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };
