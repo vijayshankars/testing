@@ -575,7 +575,11 @@ const DriverDashboard = () => {
     if (driverProfile && currentLocation) {
       updateDriverLocation();
       fetchRideRequests(); // Fetch immediately when location is available
-      const interval = setInterval(fetchRideRequests, 10000); // Check every 10 seconds
+      fetchAcceptedRides(); // Fetch accepted rides
+      const interval = setInterval(() => {
+        fetchRideRequests();
+        fetchAcceptedRides();
+      }, 10000); // Check every 10 seconds
       return () => clearInterval(interval);
     }
   }, [driverProfile, currentLocation]);
