@@ -1318,6 +1318,8 @@ const RiderDashboard = () => {
   useEffect(() => {
     getCurrentLocation();
     fetchCurrentRides();
+    fetchRideHistory();
+    fetchAvailableDiscounts(); // Load available discounts on mount
   }, []);
 
   useEffect(() => {
