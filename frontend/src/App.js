@@ -183,6 +183,66 @@ const useGoogleMaps = () => {
     });
   };
 
+  const fetchAvailableDiscounts = async () => {
+    try {
+      const response = await axios.get(`${API}/rider/available-discounts`);
+      if (response.data.success) {
+        setAvailableDiscounts(response.data.discounts);
+      }
+    } catch (error) {
+      console.error('Error fetching discounts:', error);
+    }
+  };
+
+  const applyDiscountCode = async () => {
+    if (!promoCode.trim()) {
+      alert('Please enter a promo code');
+      return;
+    }
+    
+    if (!estimatedFare) {
+      alert('Please calculate fare first');
+      return;
+    }
+
+    setIsApplyingDiscount(true);
+    
+    try {
+      const response = await axios.post(`${API}/rider/apply-discount`, {
+        promo_code: promoCode.trim(),
+        ride_fare: estimatedFare
+      });
+      
+      if (response.data.success) {
+        setAppliedDiscount(response.data.discount_details);
+        alert(`🎉 ${response.data.message}\nYou saved ₹${response.data.discount_details.savings}!`);
+      } else {
+        alert(`❌ ${response.data.message}`);
+        setAppliedDiscount(null);
+      }
+    } catch (error) {
+      console.error('Error applying discount:', error);
+      alert('❌ Failed to apply discount code');
+      setAppliedDiscount(null);
+    } finally {
+      setIsApplyingDiscount(false);
+    }
+  };
+
+  const selectDiscountCode = (discount) => {
+    setPromoCode(discount.code);
+    setShowDiscountModal(false);
+    // Automatically apply the selected discount
+    setTimeout(() => {
+      applyDiscountCode();
+    }, 100);
+  };
+
+  const clearDiscount = () => {
+    setPromoCode('');
+    setAppliedDiscount(null);
+  };
+
   const searchPlaces = (query, callback) => {
     if (!placesService || !map) return;
 
