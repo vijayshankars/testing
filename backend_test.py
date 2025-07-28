@@ -1156,10 +1156,312 @@ def test_mobile_otp_authentication_system(result: TestResult):
     except Exception as e:
         result.log_failure("POST /api/auth/verify-otp", str(e))
 
+def test_comprehensive_discount_system(result: TestResult):
+    """Test the comprehensive discount system as requested"""
+    print(f"\n{'='*60}")
+    print("12. COMPREHENSIVE DISCOUNT SYSTEM TESTING")
+    print(f"{'='*60}")
+    
+    # Test data for discount system
+    test_rider_data = {
+        "phone_number": "+91 9876543210",
+        "user_type": "rider",
+        "name": "Test Rider Discount"
+    }
+    
+    test_rider_token = None
+    
+    # Step 1: Create test rider user via mobile OTP authentication
+    try:
+        # Send OTP
+        otp_request = {
+            "phone_number": test_rider_data["phone_number"],
+            "user_type": test_rider_data["user_type"]
+        }
+        send_response = make_request("POST", "/auth/send-otp", otp_request)
+        
+        if send_response.status_code == 200:
+            # Verify OTP (using demo OTP)
+            verify_request = {
+                "phone_number": test_rider_data["phone_number"],
+                "otp_code": "123456",  # Demo OTP
+                "user_type": test_rider_data["user_type"],
+                "name": test_rider_data["name"]
+            }
+            verify_response = make_request("POST", "/auth/verify-otp", verify_request)
+            
+            if verify_response.status_code == 200:
+                data = verify_response.json()
+                if data.get("success") and data.get("token"):
+                    test_rider_token = data["token"]
+                    result.log_success("Step 1 - Test rider created via mobile OTP authentication")
+                else:
+                    result.log_failure("Step 1", f"OTP verification failed: {data}")
+                    return
+            else:
+                result.log_failure("Step 1", f"OTP verification failed: {verify_response.status_code} - {verify_response.text}")
+                return
+        else:
+            result.log_failure("Step 1", f"OTP sending failed: {send_response.status_code} - {send_response.text}")
+            return
+    except Exception as e:
+        result.log_failure("Step 1", f"Rider creation error: {str(e)}")
+        return
+    
+    # Step 2: Initialize Sample Discounts
+    try:
+        response = make_request("POST", "/admin/init-sample-discounts")
+        if response.status_code == 200:
+            data = response.json()
+            if "codes" in data and len(data["codes"]) >= 4:
+                expected_codes = ["FIRST20", "SAVE10", "FLAT50", "WEEKEND25"]
+                if all(code in data["codes"] for code in expected_codes):
+                    result.log_success("Step 2 - Sample discount codes created (FIRST20, SAVE10, FLAT50, WEEKEND25)")
+                else:
+                    result.log_failure("Step 2", f"Missing expected discount codes. Got: {data['codes']}")
+            else:
+                result.log_failure("Step 2", f"Unexpected response format: {data}")
+        else:
+            result.log_failure("Step 2", f"Sample discount initialization failed: {response.status_code} - {response.text}")
+    except Exception as e:
+        result.log_failure("Step 2", f"Sample discount initialization error: {str(e)}")
+    
+    # Step 3: Test Available Discounts endpoint
+    if test_rider_token:
+        try:
+            headers = get_auth_headers(test_rider_token)
+            response = make_request("GET", "/rider/available-discounts", headers=headers)
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success") and "discounts" in data:
+                    discounts = data["discounts"]
+                    if len(discounts) >= 4:
+                        result.log_success("Step 3 - Available discounts retrieved successfully")
+                        
+                        # Verify discount structure
+                        required_fields = ["code", "discount_type", "discount_value", "min_fare_amount"]
+                        for discount in discounts:
+                            if all(field in discount for field in required_fields):
+                                result.log_success(f"Step 3a - Discount {discount['code']} has correct structure")
+                            else:
+                                result.log_failure(f"Step 3a", f"Discount {discount.get('code', 'unknown')} missing required fields")
+                    else:
+                        result.log_failure("Step 3", f"Expected at least 4 discounts, got {len(discounts)}")
+                else:
+                    result.log_failure("Step 3", f"Unexpected response format: {data}")
+            else:
+                result.log_failure("Step 3", f"Available discounts request failed: {response.status_code} - {response.text}")
+        except Exception as e:
+            result.log_failure("Step 3", f"Available discounts error: {str(e)}")
+    
+    # Step 4: Test Discount Code Application - Valid discount with sufficient fare
+    if test_rider_token:
+        try:
+            headers = get_auth_headers(test_rider_token)
+            apply_request = {
+                "promo_code": "SAVE10",
+                "ride_fare": 150.0  # Above minimum fare of 100
+            }
+            response = make_request("POST", "/rider/apply-discount", apply_request, headers)
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success") and "discount_details" in data:
+                    details = data["discount_details"]
+                    if details.get("discount_amount") > 0 and details.get("final_fare") < 150.0:
+                        result.log_success("Step 4 - Valid discount code applied successfully (SAVE10)")
+                    else:
+                        result.log_failure("Step 4", f"Discount not applied correctly: {details}")
+                else:
+                    result.log_failure("Step 4", f"Discount application failed: {data}")
+            else:
+                result.log_failure("Step 4", f"Discount application request failed: {response.status_code} - {response.text}")
+        except Exception as e:
+            result.log_failure("Step 4", f"Valid discount application error: {str(e)}")
+    
+    # Step 5: Test Invalid/Expired discount code
+    if test_rider_token:
+        try:
+            headers = get_auth_headers(test_rider_token)
+            apply_request = {
+                "promo_code": "INVALID123",
+                "ride_fare": 150.0
+            }
+            response = make_request("POST", "/rider/apply-discount", apply_request, headers)
+            if response.status_code == 200:
+                data = response.json()
+                if not data.get("success") and "invalid" in data.get("message", "").lower():
+                    result.log_success("Step 5 - Invalid discount code rejected correctly")
+                else:
+                    result.log_failure("Step 5", f"Invalid discount should be rejected: {data}")
+            else:
+                result.log_failure("Step 5", f"Invalid discount test failed: {response.status_code} - {response.text}")
+        except Exception as e:
+            result.log_failure("Step 5", f"Invalid discount test error: {str(e)}")
+    
+    # Step 6: Test Minimum fare requirement not met
+    if test_rider_token:
+        try:
+            headers = get_auth_headers(test_rider_token)
+            apply_request = {
+                "promo_code": "SAVE10",
+                "ride_fare": 50.0  # Below minimum fare of 100
+            }
+            response = make_request("POST", "/rider/apply-discount", apply_request, headers)
+            if response.status_code == 200:
+                data = response.json()
+                if not data.get("success") and "minimum" in data.get("message", "").lower():
+                    result.log_success("Step 6 - Minimum fare requirement enforced correctly")
+                else:
+                    result.log_failure("Step 6", f"Minimum fare check failed: {data}")
+            else:
+                result.log_failure("Step 6", f"Minimum fare test failed: {response.status_code} - {response.text}")
+        except Exception as e:
+            result.log_failure("Step 6", f"Minimum fare test error: {str(e)}")
+    
+    # Step 7: Test Fixed Amount Discount (FLAT50)
+    if test_rider_token:
+        try:
+            headers = get_auth_headers(test_rider_token)
+            apply_request = {
+                "promo_code": "FLAT50",
+                "ride_fare": 250.0  # Above minimum fare of 200
+            }
+            response = make_request("POST", "/rider/apply-discount", apply_request, headers)
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success") and "discount_details" in data:
+                    details = data["discount_details"]
+                    if details.get("discount_amount") == 50.0 and details.get("final_fare") == 200.0:
+                        result.log_success("Step 7 - Fixed amount discount (₹50 off) applied correctly")
+                    else:
+                        result.log_failure("Step 7", f"Fixed discount calculation wrong: {details}")
+                else:
+                    result.log_failure("Step 7", f"Fixed discount application failed: {data}")
+            else:
+                result.log_failure("Step 7", f"Fixed discount test failed: {response.status_code} - {response.text}")
+        except Exception as e:
+            result.log_failure("Step 7", f"Fixed discount test error: {str(e)}")
+    
+    # Step 8: Test Percentage Discount (WEEKEND25)
+    if test_rider_token:
+        try:
+            headers = get_auth_headers(test_rider_token)
+            apply_request = {
+                "promo_code": "WEEKEND25",
+                "ride_fare": 100.0  # Above minimum fare of 80
+            }
+            response = make_request("POST", "/rider/apply-discount", apply_request, headers)
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success") and "discount_details" in data:
+                    details = data["discount_details"]
+                    expected_discount = 25.0  # 25% of 100
+                    if details.get("discount_amount") == expected_discount and details.get("final_fare") == 75.0:
+                        result.log_success("Step 8 - Percentage discount (25% off) applied correctly")
+                    else:
+                        result.log_failure("Step 8", f"Percentage discount calculation wrong: {details}")
+                else:
+                    result.log_failure("Step 8", f"Percentage discount application failed: {data}")
+            else:
+                result.log_failure("Step 8", f"Percentage discount test failed: {response.status_code} - {response.text}")
+        except Exception as e:
+            result.log_failure("Step 8", f"Percentage discount test error: {str(e)}")
+    
+    # Step 9: Test First Ride Discount (FIRST20)
+    if test_rider_token:
+        try:
+            headers = get_auth_headers(test_rider_token)
+            apply_request = {
+                "promo_code": "FIRST20",
+                "ride_fare": 100.0  # Above minimum fare of 50
+            }
+            response = make_request("POST", "/rider/apply-discount", apply_request, headers)
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success") and "discount_details" in data:
+                    details = data["discount_details"]
+                    expected_discount = 20.0  # 20% of 100
+                    if details.get("discount_amount") == expected_discount and details.get("final_fare") == 80.0:
+                        result.log_success("Step 9 - First ride discount (20% off) applied correctly")
+                    else:
+                        result.log_failure("Step 9", f"First ride discount calculation wrong: {details}")
+                else:
+                    result.log_failure("Step 9", f"First ride discount application failed: {data}")
+            else:
+                result.log_failure("Step 9", f"First ride discount test failed: {response.status_code} - {response.text}")
+        except Exception as e:
+            result.log_failure("Step 9", f"First ride discount test error: {str(e)}")
+    
+    # Step 10: Test Ride Request with Discount Code
+    if test_rider_token:
+        try:
+            headers = get_auth_headers(test_rider_token)
+            ride_request = {
+                "pickup_location": {
+                    "lat": 13.0827,
+                    "lng": 80.2707,
+                    "address": "Chennai International Airport"
+                },
+                "drop_location": {
+                    "lat": 13.0569,
+                    "lng": 80.2091,
+                    "address": "T. Nagar, Chennai"
+                },
+                "estimated_distance": 15.2,
+                "estimated_fare": 200.0,
+                "promo_code": "FLAT50"
+            }
+            response = make_request("POST", "/rider/request-ride", ride_request, headers)
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("final_fare") == 150.0 and data.get("discount_applied"):
+                    discount_info = data["discount_applied"]
+                    if discount_info.get("code") == "FLAT50" and discount_info.get("discount_amount") == 50.0:
+                        result.log_success("Step 10 - Ride request with discount code applied correctly")
+                    else:
+                        result.log_failure("Step 10", f"Discount not applied correctly in ride request: {discount_info}")
+                else:
+                    result.log_failure("Step 10", f"Ride request with discount failed: {data}")
+            else:
+                result.log_failure("Step 10", f"Ride request with discount failed: {response.status_code} - {response.text}")
+        except Exception as e:
+            result.log_failure("Step 10", f"Ride request with discount error: {str(e)}")
+    
+    # Step 11: Test Ride Request without Discount Code
+    if test_rider_token:
+        try:
+            headers = get_auth_headers(test_rider_token)
+            ride_request = {
+                "pickup_location": {
+                    "lat": 13.0827,
+                    "lng": 80.2707,
+                    "address": "Chennai International Airport"
+                },
+                "drop_location": {
+                    "lat": 13.0569,
+                    "lng": 80.2091,
+                    "address": "T. Nagar, Chennai"
+                },
+                "estimated_distance": 15.2,
+                "estimated_fare": 200.0
+                # No promo_code
+            }
+            response = make_request("POST", "/rider/request-ride", ride_request, headers)
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("final_fare") == 200.0 and not data.get("discount_applied"):
+                    result.log_success("Step 11 - Ride request without discount code works correctly")
+                else:
+                    result.log_failure("Step 11", f"Ride request without discount failed: {data}")
+            else:
+                result.log_failure("Step 11", f"Ride request without discount failed: {response.status_code} - {response.text}")
+        except Exception as e:
+            result.log_failure("Step 11", f"Ride request without discount error: {str(e)}")
+
 def test_nearby_ride_requests_scenario(result: TestResult):
     """Test the complete nearby ride requests functionality as requested"""
     print(f"\n{'='*60}")
-    print("12. NEARBY RIDE REQUESTS SCENARIO TESTING")
+    print("13. NEARBY RIDE REQUESTS SCENARIO TESTING")
     print(f"{'='*60}")
     
     # Test data for the specific scenario
