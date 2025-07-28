@@ -503,12 +503,27 @@ const DriverDashboard = () => {
 
   const acceptRide = async (rideId) => {
     try {
-      await axios.post(`${API}/driver/accept-ride/${rideId}`);
-      fetchRideRequests();
-      alert('Ride accepted successfully!');
+      const response = await axios.post(`${API}/driver/accept-ride/${rideId}`);
+      
+      // Remove the accepted ride from the list immediately
+      setRideRequests(prevRequests => 
+        prevRequests.filter(request => request.id !== rideId)
+      );
+      
+      alert('Ride accepted successfully! The rider has been notified.');
+      
+      // Refresh the list after a short delay
+      setTimeout(() => {
+        fetchRideRequests();
+      }, 2000);
+      
     } catch (error) {
       console.error('Error accepting ride:', error);
-      alert('Failed to accept ride');
+      const errorMessage = error.response?.data?.detail || 'Failed to accept ride';
+      alert(`Error: ${errorMessage}`);
+      
+      // Refresh the list in case the ride was taken by another driver
+      fetchRideRequests();
     }
   };
 
