@@ -793,7 +793,173 @@ async def accept_ride(ride_id: str, current_user: dict = Depends(get_current_use
         "instructions": "Share the OTP with the rider for verification"
     }
 
+@api_router.post("/driver/verify-ride-otp")
+async def verify_ride_otp(
+    verification: RideOTPVerification,
+    current_user: dict = Depends(get_current_user)
+):
+    if current_user["user_type"] != "driver":
+        raise HTTPException(status_code=403, detail="Only drivers can verify ride OTP")
+    
+    # Find the ride
+    ride = await db.ride_requests.find_one({
+        "id": verification.ride_id,
+        "driver_id": current_user["id"],
+        "status": "accepted"
+    })
+    
+    if not ride:
+        raise HTTPException(status_code=404, detail="Ride not found or not assigned to you")
+    
+    # Verify OTP
+    if ride.get("ride_otp") != verification.otp_code:
+        raise HTTPException(status_code=400, detail="Invalid OTP")
+    
+    # Update ride status to in_progress
+    result = await db.ride_requests.update_one(
+        {"id": verification.ride_id},
+        {
+            "$set": {
+                "status": "in_progress",
+                "otp_verified": True,
+                "started_at": datetime.utcnow()
+            }
+        }
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=400, detail="Failed to start ride")
+    
+    return {"message": "Ride started successfully", "status": "in_progress"}
+
+@api_router.post("/driver/complete-ride")
+async def complete_ride(
+    ride_update: RideStatusUpdate,
+    current_user: dict = Depends(get_current_user)
+):
+    if current_user["user_type"] != "driver":
+        raise HTTPException(status_code=403, detail="Only drivers can complete rides")
+    
+    # Find the ride
+    ride = await db.ride_requests.find_one({
+        "id": ride_update.ride_id,
+        "driver_id": current_user["id"],
+        "status": "in_progress"
+    })
+    
+    if not ride:
+        raise HTTPException(status_code=404, detail="Ride not found or not in progress")
+    
+    # Update ride status to completed
+    result = await db.ride_requests.update_one(
+        {"id": ride_update.ride_id},
+        {
+            "$set": {
+                "status": "completed",
+                "completed_at": datetime.utcnow()
+            }
+        }
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=400, detail="Failed to complete ride")
+    
+    return {"message": "Ride completed successfully", "status": "completed"}
+
 # Rider Routes
+@api_router.post("/rider/cancel-ride")
+async def cancel_ride(
+    cancellation: RideCancellationRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    if current_user["user_type"] != "rider":
+        raise HTTPException(status_code=403, detail="Only riders can cancel their rides")
+    
+    # Find the ride
+    ride = await db.ride_requests.find_one({
+        "id": cancellation.ride_id,
+        "rider_id": current_user["id"],
+        "status": {"$in": ["requested", "accepted"]}
+    })
+    
+    if not ride:
+        raise HTTPException(status_code=404, detail="Ride not found or cannot be cancelled")
+    
+    # Update ride status to cancelled
+    result = await db.ride_requests.update_one(
+        {"id": cancellation.ride_id},
+        {
+            "$set": {
+                "status": "cancelled",
+                "cancelled_at": datetime.utcnow(),
+                "cancellation_reason": cancellation.reason
+            }
+        }
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=400, detail="Failed to cancel ride")
+    
+    return {"message": "Ride cancelled successfully", "status": "cancelled"}
+
+@api_router.get("/rider/ride-history")
+async def get_rider_ride_history(
+    limit: int = 20,
+    status: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    if current_user["user_type"] != "rider":
+        raise HTTPException(status_code=403, detail="Only riders can view their ride history")
+    
+    query = {"rider_id": current_user["id"]}
+    if status:
+        query["status"] = status
+    
+    rides = await db.ride_requests.find(query).sort("created_at", -1).limit(limit).to_list(limit)
+    
+    # Add driver info for accepted/completed rides
+    for ride in rides:
+        ride.pop("_id", None)
+        if ride.get("driver_id"):
+            driver_user = await db.users.find_one({"id": ride["driver_id"]})
+            driver_profile = await db.driver_profiles.find_one({"user_id": ride["driver_id"]})
+            
+            if driver_user and driver_profile:
+                ride["driver_info"] = {
+                    "name": driver_user["name"],
+                    "phone": driver_user["phone"],
+                    "vehicle_type": driver_profile["vehicle_type"],
+                    "vehicle_number": driver_profile["vehicle_number"]
+                }
+    
+    return {"rides": rides, "total": len(rides)}
+
+@api_router.get("/driver/ride-history")
+async def get_driver_ride_history(
+    limit: int = 20,
+    status: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    if current_user["user_type"] != "driver":
+        raise HTTPException(status_code=403, detail="Only drivers can view their ride history")
+    
+    query = {"driver_id": current_user["id"]}
+    if status:
+        query["status"] = status
+    
+    rides = await db.ride_requests.find(query).sort("created_at", -1).limit(limit).to_list(limit)
+    
+    # Add rider info
+    for ride in rides:
+        ride.pop("_id", None)
+        rider_user = await db.users.find_one({"id": ride["rider_id"]})
+        if rider_user:
+            ride["rider_info"] = {
+                "name": rider_user["name"],
+                "phone": rider_user["phone"]
+            }
+    
+    return {"rides": rides, "total": len(rides)}
 @api_router.post("/rider/request-ride", response_model=RideResponse)
 async def request_ride(
     ride_data: RideRequestCreate,
