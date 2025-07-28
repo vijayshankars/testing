@@ -1931,6 +1931,73 @@ const RiderDashboard = () => {
         </div>
       </div>
 
+      {/* Ride History Modal */}
+      {showHistory && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold text-gray-900">Ride History</h2>
+                <button
+                  onClick={() => setShowHistory(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <XCircle className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {rideHistory.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <Clock className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                    <p>No ride history found</p>
+                  </div>
+                ) : (
+                  rideHistory.map((ride) => (
+                    <div key={ride.id} className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex-1">
+                          <div className="font-medium mb-1">
+                            {ride.pickup_location.address} → {ride.drop_location.address}
+                          </div>
+                          <div className="text-sm text-gray-600 mb-2 flex items-center">
+                            <IndianRupee className="w-3 h-3 mr-1" />
+                            {ride.estimated_fare} • {ride.estimated_distance.toFixed(1)} km
+                          </div>
+                          {ride.driver_info && (
+                            <div className="text-sm text-gray-600">
+                              Driver: {ride.driver_info.name} • {ride.driver_info.vehicle_type} ({ride.driver_info.vehicle_number})
+                            </div>
+                          )}
+                          {ride.cancellation_reason && (
+                            <div className="text-sm text-red-600 mt-1">
+                              Reason: {ride.cancellation_reason}
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
+                            ride.status === 'completed' ? 'bg-green-100 text-green-800' :
+                            ride.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                            ride.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {ride.status.replace('_', ' ')}
+                          </span>
+                          <div className="text-xs text-gray-500 mt-1">
+                            {new Date(ride.created_at).toLocaleString()}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* UPI Payment Modal */}
       {showPaymentModal && selectedRideForPayment && (
         <UPIPaymentModal
