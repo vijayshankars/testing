@@ -1738,8 +1738,8 @@ const RiderDashboard = () => {
   };
 
   const requestRide = async () => {
-    if (!pickupLocation || !dropLocation || !estimatedDistance) {
-      alert('Please enter pickup and drop locations and calculate fare');
+    if (!pickupLocation || !dropLocation) {
+      alert('Please enter your destination and ensure pickup location is set');
       return;
     }
 
