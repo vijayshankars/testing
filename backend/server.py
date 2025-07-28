@@ -714,9 +714,20 @@ async def create_driver_profile(
         if not registration_doc:
             raise HTTPException(status_code=400, detail="Invalid registration document. Please ensure it's a JPG, PNG, or PDF file under 5MB.")
     
+    # Set default per_km_rate based on vehicle type for backward compatibility
+    vehicle_rates = {
+        "bike": 5.0,
+        "auto": 8.0, 
+        "car": 12.0,
+        "suv": 15.0
+    }
+    
+    per_km_rate = vehicle_rates.get(profile_data.vehicle_type.lower(), 10.0)
+    
     # Create profile with documents
     profile_dict = profile_data.dict()
     profile_dict["user_id"] = current_user["id"]
+    profile_dict["per_km_rate"] = per_km_rate  # Auto-assigned based on vehicle type
     profile_dict["license_document"] = license_doc
     profile_dict["registration_document"] = registration_doc
     profile_dict["document_verified"] = False  # Will be verified manually
