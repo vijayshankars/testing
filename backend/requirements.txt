@@ -26,3 +26,4 @@ typer>=0.9.0
 bcrypt>=4.0.1
 geopy>=2.4.1
 emergentintegrations
+razorpay>=1.4.0
