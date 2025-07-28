@@ -385,7 +385,7 @@ def test_error_scenarios(result: TestResult):
     try:
         # Create another driver
         otp_data = {
-            "phone_number": "+91 9876543212",
+            "phone_number": "+91 9876543214",  # Different number
             "user_type": "driver"
         }
         response = make_request("POST", "/auth/send-otp", otp_data)
