@@ -138,6 +138,10 @@ class DriverProfileCreate(BaseModel):
 class LicenseVerificationRequest(BaseModel):
     license_number: str
 
+class VehicleVerificationRequest(BaseModel):
+    vehicle_number: str
+    vehicle_type: Optional[str] = None
+
 class DiscountCode(BaseModel):
     code: str
     discount_type: str  # 'percentage', 'fixed_amount', 'first_ride'
