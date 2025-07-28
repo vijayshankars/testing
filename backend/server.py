@@ -213,6 +213,34 @@ class RazorpayPaymentVerification(BaseModel):
     razorpay_payment_id: str
     razorpay_signature: str
 
+# OTP Authentication Models
+class PhoneNumberRequest(BaseModel):
+    phone_number: str
+    user_type: str  # "driver" or "rider"
+
+class OTPVerificationRequest(BaseModel):
+    phone_number: str
+    otp_code: str
+    user_type: str
+    name: Optional[str] = None  # For new user registration
+
+class OTPSession(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    phone_number: str
+    user_type: str
+    otp_code: str
+    is_verified: bool = False
+    attempts: int = 0
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    expires_at: datetime = Field(default_factory=lambda: datetime.utcnow() + timedelta(minutes=10))
+
+class AuthResponse(BaseModel):
+    success: bool
+    message: str
+    user_data: Optional[Dict[str, Any]] = None
+    token: Optional[str] = None
+    is_new_user: bool = False
+
 # Utility Functions
 def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
