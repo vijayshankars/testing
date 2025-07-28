@@ -710,10 +710,23 @@ const RiderDashboard = () => {
 
   useEffect(() => {
     if (loaded && mapElement && currentLocation) {
-      initMap(mapElement, {
+      const map = initMap(mapElement, {
         center: currentLocation,
         zoom: 15
       });
+      setMapInstance(map);
+      
+      // Add current location marker
+      if (map && window.google) {
+        new window.google.maps.Marker({
+          position: currentLocation,
+          map: map,
+          title: 'Your Location',
+          icon: {
+            url: 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png'
+          }
+        });
+      }
     }
   }, [loaded, mapElement, currentLocation]);
 
@@ -724,6 +737,78 @@ const RiderDashboard = () => {
       fetchAvailableDrivers(location.lat, location.lng);
     } catch (error) {
       console.error('Error getting location:', error);
+      // Use fallback location (Delhi)
+      const fallbackLocation = { lat: 28.6139, lng: 77.2090 };
+      setCurrentLocation(fallbackLocation);
+      fetchAvailableDrivers(fallbackLocation.lat, fallbackLocation.lng);
+    }
+  };
+
+  const handleLocationSelect = (locationType, address) => {
+    if (locationType === 'pickup') {
+      setPickupLocation(address);
+      
+      // Add pickup marker
+      if (mapInstance && window.google) {
+        if (pickupMarker) {
+          pickupMarker.setMap(null);
+        }
+        
+        searchPlaces(address, (results) => {
+          if (results.length > 0) {
+            const place = results[0];
+            const marker = new window.google.maps.Marker({
+              position: place.geometry.location,
+              map: mapInstance,
+              title: 'Pickup Location',
+              icon: {
+                url: 'https://maps.google.com/mapfiles/ms/icons/green-dot.png'
+              }
+            });
+            setPickupMarker(marker);
+            mapInstance.panTo(place.geometry.location);
+          }
+        });
+      }
+    } else if (locationType === 'drop') {
+      setDropLocation(address);
+      
+      // Add drop marker
+      if (mapInstance && window.google) {
+        if (dropMarker) {
+          dropMarker.setMap(null);
+        }
+        
+        searchPlaces(address, (results) => {
+          if (results.length > 0) {
+            const place = results[0];
+            const marker = new window.google.maps.Marker({
+              position: place.geometry.location,
+              map: mapInstance,
+              title: 'Drop Location',
+              icon: {
+                url: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png'
+              }
+            });
+            setDropMarker(marker);
+            
+            // If both markers exist, fit bounds
+            if (pickupMarker) {
+              const bounds = new window.google.maps.LatLngBounds();
+              bounds.extend(pickupMarker.getPosition());
+              bounds.extend(marker.getPosition());
+              mapInstance.fitBounds(bounds);
+            }
+          }
+        });
+      }
+    }
+  };
+
+  const useCurrentLocation = () => {
+    if (currentLocation) {
+      const address = `Current Location (${currentLocation.lat.toFixed(4)}, ${currentLocation.lng.toFixed(4)})`;
+      handleLocationSelect('pickup', address);
     }
   };
 
