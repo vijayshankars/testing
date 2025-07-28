@@ -895,9 +895,20 @@ const DriverDashboard = () => {
           </div>
 
           {/* Ride Requests */}
-          <div className="lg:col-span-2 bg-white rounded-lg shadow p-6">
+          <div className={`lg:col-span-2 bg-white rounded-lg shadow p-6 transition-all duration-300 ${flashEffect ? 'ring-4 ring-green-400 bg-green-50' : ''}`}>
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold">Nearby Ride Requests</h2>
+              <h2 className="text-lg font-semibold flex items-center">
+                Nearby Ride Requests
+                {notificationPermission !== 'granted' && (
+                  <button
+                    onClick={() => Notification.requestPermission()}
+                    className="ml-2 text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-full hover:bg-blue-200"
+                    title="Enable notifications for new ride requests"
+                  >
+                    🔔 Enable Alerts
+                  </button>
+                )}
+              </h2>
               <div className="flex items-center space-x-2">
                 <button
                   onClick={fetchRideRequests}
