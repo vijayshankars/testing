@@ -1725,6 +1725,9 @@ def main():
     test_payment_error_handling(result)
     test_database_integration(result)
     
+    # Run the comprehensive discount system test
+    test_comprehensive_discount_system(result)
+    
     # Run the specific nearby ride requests scenario test
     test_nearby_ride_requests_scenario(result)
     
