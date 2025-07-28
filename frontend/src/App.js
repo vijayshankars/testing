@@ -957,6 +957,19 @@ const DriverDashboard = () => {
                   </div>
                 </>
               )}
+
+              {/* Navigation Buttons */}
+              <div className="space-y-2">
+                <button
+                  onClick={() => {
+                    setShowHistory(!showHistory);
+                    if (!showHistory) fetchRideHistory();
+                  }}
+                  className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  {showHistory ? 'Hide' : 'View'} Ride History
+                </button>
+              </div>
             </div>
           </div>
 
