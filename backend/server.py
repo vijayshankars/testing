@@ -316,6 +316,62 @@ def process_document(document_data: Dict[str, Any]) -> Dict[str, Any]:
     
     return processed_doc
 
+def validate_phone_number(phone: str) -> str:
+    """Validate and format phone number to E.164 format"""
+    # Remove all non-digit characters except +
+    clean_phone = re.sub(r'[^\d+]', '', phone)
+    
+    # If doesn't start with +, assume it's Indian number
+    if not clean_phone.startswith('+'):
+        if clean_phone.startswith('91'):
+            clean_phone = '+' + clean_phone
+        elif len(clean_phone) == 10:
+            clean_phone = '+91' + clean_phone
+        else:
+            clean_phone = '+91' + clean_phone
+    
+    # Validate the format
+    if not re.match(r'^\+[1-9]\d{1,14}$', clean_phone):
+        raise ValueError("Invalid phone number format")
+    
+    return clean_phone
+
+def generate_otp() -> str:
+    """Generate a 6-digit OTP"""
+    import random
+    return str(random.randint(100000, 999999))
+
+async def send_otp_via_twilio(phone_number: str) -> Dict[str, Any]:
+    """Send OTP via Twilio or simulate in demo mode"""
+    if twilio_client and twilio_verify_service and not twilio_account_sid.startswith('AC_demo'):
+        try:
+            verification = twilio_client.verify.services(twilio_verify_service)\
+                .verifications.create(to=phone_number, channel="sms")
+            return {"status": "sent", "service": "twilio", "sid": verification.sid}
+        except Exception as e:
+            logger.error(f"Twilio error: {e}")
+            # Fall back to demo mode
+            return {"status": "demo", "service": "demo", "message": "Demo mode - OTP not sent"}
+    else:
+        # Demo mode - generate and log OTP
+        otp = generate_otp()
+        logger.info(f"DEMO OTP for {phone_number}: {otp}")
+        return {"status": "demo", "service": "demo", "otp": otp, "message": f"Demo OTP: {otp}"}
+
+async def verify_otp_via_twilio(phone_number: str, code: str) -> bool:
+    """Verify OTP via Twilio or simulate in demo mode"""
+    if twilio_client and twilio_verify_service and not twilio_account_sid.startswith('AC_demo'):
+        try:
+            check = twilio_client.verify.services(twilio_verify_service)\
+                .verification_checks.create(to=phone_number, code=code)
+            return check.status == "approved"
+        except Exception:
+            return False
+    else:
+        # Demo mode - accept specific demo OTPs
+        demo_otps = ["123456", "000000"]  # Demo OTPs for testing
+        return code in demo_otps
+
 # Auth Routes
 @api_router.post("/auth/register", response_model=UserResponse)
 async def register(user_data: UserCreate):
