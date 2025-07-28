@@ -786,19 +786,34 @@ const DriverDashboard = () => {
   };
 
   const verifyRideOTP = async (rideId, otpCode) => {
+    if (!otpCode || otpCode.length !== 4) {
+      alert('Please enter a valid 4-digit OTP');
+      return;
+    }
+
     try {
-      await axios.post(`${API}/driver/verify-ride-otp`, {
+      const response = await axios.post(`${API}/driver/verify-ride-otp`, {
         ride_id: rideId,
         otp_code: otpCode
       });
       
-      alert('OTP verified successfully! Ride started.');
+      alert('🎉 OTP verified successfully! Ride started.\n\nYou can now begin the journey to the destination.');
+      
+      // Clear modal state
       setSelectedRideForOTP(null);
       setOtpInput('');
+      
+      // Refresh ride lists
       fetchAcceptedRides();
+      fetchRideHistory();
+      
     } catch (error) {
       console.error('Error verifying OTP:', error);
-      alert('Invalid OTP. Please try again.');
+      const errorMessage = error.response?.data?.detail || 'Invalid OTP. Please try again.';
+      alert(`❌ ${errorMessage}`);
+      
+      // Clear the input to allow retry
+      setOtpInput('');
     }
   };
 
