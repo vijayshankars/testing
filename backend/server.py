@@ -1338,6 +1338,83 @@ async def request_ride_post(
     
     return RideResponse(**ride.dict())
 
+@api_router.post("/admin/init-sample-discounts")
+async def initialize_sample_discounts():
+    """Initialize sample discount codes for demo purposes"""
+    try:
+        # Check if discount codes already exist
+        existing_count = await db.discount_codes.count_documents({})
+        if existing_count > 0:
+            return {"message": "Sample discount codes already exist"}
+        
+        # Sample discount codes
+        sample_discounts = [
+            {
+                "code": "FIRST20",
+                "discount_type": "first_ride",
+                "discount_value": 20.0,
+                "min_fare_amount": 50.0,
+                "max_discount_amount": 100.0,
+                "usage_limit": 1,
+                "valid_from": datetime.utcnow(),
+                "valid_until": datetime.utcnow() + timedelta(days=30),
+                "is_active": True,
+                "description": "20% off on your first ride",
+                "created_at": datetime.utcnow()
+            },
+            {
+                "code": "SAVE10",
+                "discount_type": "percentage",
+                "discount_value": 10.0,
+                "min_fare_amount": 100.0,
+                "max_discount_amount": 50.0,
+                "usage_limit": 5,
+                "valid_from": datetime.utcnow(),
+                "valid_until": datetime.utcnow() + timedelta(days=15),
+                "is_active": True,
+                "description": "10% off up to ₹50",
+                "created_at": datetime.utcnow()
+            },
+            {
+                "code": "FLAT50",
+                "discount_type": "fixed_amount",
+                "discount_value": 50.0,
+                "min_fare_amount": 200.0,
+                "max_discount_amount": 50.0,
+                "usage_limit": 3,
+                "valid_from": datetime.utcnow(),
+                "valid_until": datetime.utcnow() + timedelta(days=7),
+                "is_active": True,
+                "description": "Flat ₹50 off on rides above ₹200",
+                "created_at": datetime.utcnow()
+            },
+            {
+                "code": "WEEKEND25",
+                "discount_type": "percentage",
+                "discount_value": 25.0,
+                "min_fare_amount": 80.0,
+                "max_discount_amount": 75.0,
+                "usage_limit": 2,
+                "valid_from": datetime.utcnow(),
+                "valid_until": datetime.utcnow() + timedelta(days=10),
+                "is_active": True,
+                "description": "25% off weekend rides",
+                "created_at": datetime.utcnow()
+            }
+        ]
+        
+        # Insert sample discount codes
+        result = await db.discount_codes.insert_many(sample_discounts)
+        
+        return {
+            "message": f"Successfully created {len(result.inserted_ids)} sample discount codes",
+            "codes": [discount["code"] for discount in sample_discounts]
+        }
+        
+    except Exception as e:
+        print(f"Error initializing sample discounts: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to initialize sample discounts")
+
 @api_router.get("/rider/rides")
 async def get_rider_rides(current_user: dict = Depends(get_current_user)):
     if current_user["user_type"] != "rider":
