@@ -129,6 +129,18 @@ backend:
           agent: "testing"
           comment: "✅ Driver and rider registration working correctly via POST /api/auth/register. ✅ Driver and rider login working correctly via POST /api/auth/login. JWT tokens generated and validated properly."
 
+  - task: "Mobile OTP Authentication System"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ COMPREHENSIVE MOBILE OTP AUTHENTICATION TESTING COMPLETED: All 19 tests passed (100% success rate). ✅ POST /api/auth/send-otp endpoint working with valid phone numbers (+91 Indian format, +1 international format). ✅ Phone number validation and formatting working correctly - rejects invalid formats (123456789, invalid_phone, 91987654321) and properly formats valid numbers. ✅ OTP generation and storage in database working correctly. ✅ Demo mode functionality working with placeholder Twilio credentials - returns demo OTP in response. ✅ POST /api/auth/verify-otp endpoint working correctly for both new user registration and existing user login. ✅ OTP validation working with both generated OTPs and demo OTPs (123456, 000000). ✅ User creation/login flow working correctly with JWT token generation. ✅ Driver and rider registration via mobile OTP working correctly. ✅ User type validation and restrictions working - prevents login with wrong user type. ✅ Error handling working: invalid OTP rejection, missing required fields (name for new users), expired/invalid OTP sessions. ✅ JWT tokens for mobile authenticated users working correctly. ✅ Complete mobile authentication flow working end-to-end with proper security measures."
+
   - task: "Driver Functionality"
     implemented: true
     working: true
