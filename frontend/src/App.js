@@ -1036,31 +1036,52 @@ const RiderDashboard = () => {
                   />
                 </div>
                 
-                <button
-                  onClick={calculateFare}
-                  className="w-full bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700"
-                >
-                  Calculate Fare
-                </button>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={calculateFare}
+                    disabled={!pickupLocation || !dropLocation}
+                    className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Calculate Fare
+                  </button>
+                  
+                  <button
+                    onClick={clearLocations}
+                    className="bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors"
+                  >
+                    Clear All
+                  </button>
+                </div>
                 
                 {estimatedFare > 0 && (
-                  <div className="p-4 bg-blue-50 rounded-lg">
+                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
                     <div className="flex justify-between items-center">
                       <span className="font-medium">Estimated Fare:</span>
-                      <span className="text-2xl font-bold text-blue-600">₹{estimatedFare}</span>
+                      <span className="text-2xl font-bold text-blue-600 flex items-center">
+                        <IndianRupee className="w-5 h-5 mr-1" />
+                        {estimatedFare}
+                      </span>
                     </div>
-                    <div className="text-sm text-gray-600 mt-1">
-                      Distance: {estimatedDistance.toFixed(1)} km
+                    <div className="text-sm text-gray-600 mt-1 flex justify-between">
+                      <span>Distance: {estimatedDistance.toFixed(1)} km</span>
+                      <span>Rate: ₹{availableDrivers.length > 0 ? (availableDrivers.reduce((sum, driver) => sum + driver.per_km_rate, 0) / availableDrivers.length).toFixed(1) : '15'}/km</span>
+                    </div>
+                    
+                    <div className="mt-3 p-2 bg-green-50 rounded text-sm text-green-700">
+                      <div className="flex items-center">
+                        <MapPin className="w-4 h-4 mr-2" />
+                        Route calculated using Google Maps
+                      </div>
                     </div>
                   </div>
                 )}
                 
                 <button
                   onClick={requestRide}
-                  disabled={!estimatedFare}
-                  className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={!estimatedFare || estimatedFare === 0}
+                  className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
                 >
-                  Request Ride
+                  {estimatedFare > 0 ? `Book Ride - ₹${estimatedFare}` : 'Enter locations to book ride'}
                 </button>
               </div>
             </div>
