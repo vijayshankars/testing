@@ -291,11 +291,60 @@ class DriverProfileEnhancementsTest:
     
     def test_backward_compatibility(self):
         """Test that existing driver-related endpoints still work properly"""
-        if not self.driver_token:
-            self.log_test("Backward Compatibility", False, "No driver token available")
+        # Create a new driver for backward compatibility testing
+        try:
+            import time
+            timestamp = int(time.time())
+            phone_number = f"+91 {(timestamp + 1000) % 10000000000:010d}"  # Generate unique phone number
+            
+            # Send OTP
+            otp_request = {
+                "phone_number": phone_number,
+                "user_type": "driver"
+            }
+            
+            response = self.session.post(
+                f"{BASE_URL}/auth/send-otp",
+                json=otp_request,
+                timeout=TIMEOUT
+            )
+            
+            if response.status_code != 200:
+                self.log_test("Backward Compatibility Setup", False, f"Failed to send OTP: {response.status_code}")
+                return
+            
+            otp_data = response.json()
+            demo_otp = otp_data.get("demo_otp", "123456")
+            
+            # Verify OTP
+            verify_request = {
+                "phone_number": phone_number,
+                "otp_code": demo_otp,
+                "user_type": "driver",
+                "name": "Test Driver Backward Compatibility"
+            }
+            
+            response = self.session.post(
+                f"{BASE_URL}/auth/verify-otp",
+                json=verify_request,
+                timeout=TIMEOUT
+            )
+            
+            if response.status_code != 200:
+                self.log_test("Backward Compatibility Setup", False, f"Failed to verify OTP: {response.status_code}")
+                return
+            
+            auth_data = response.json()
+            if not auth_data.get("success"):
+                self.log_test("Backward Compatibility Setup", False, "OTP verification failed")
+                return
+            
+            compat_token = auth_data.get("token")
+            compat_headers = {"Authorization": f"Bearer {compat_token}"}
+            
+        except Exception as e:
+            self.log_test("Backward Compatibility Setup", False, f"Exception: {str(e)}")
             return
-        
-        headers = {"Authorization": f"Bearer {self.driver_token}"}
         
         # Test 1: Create driver profile (should work with auto-assigned rates)
         try:
@@ -308,7 +357,7 @@ class DriverProfileEnhancementsTest:
             response = self.session.post(
                 f"{BASE_URL}/driver/profile",
                 json=profile_data,
-                headers=headers,
+                headers=compat_headers,
                 timeout=TIMEOUT
             )
             
@@ -332,7 +381,7 @@ class DriverProfileEnhancementsTest:
         try:
             response = self.session.get(
                 f"{BASE_URL}/driver/profile",
-                headers=headers,
+                headers=compat_headers,
                 timeout=TIMEOUT
             )
             
@@ -361,7 +410,7 @@ class DriverProfileEnhancementsTest:
             response = self.session.put(
                 f"{BASE_URL}/driver/location",
                 json=location_data,
-                headers=headers,
+                headers=compat_headers,
                 timeout=TIMEOUT
             )
             
@@ -379,7 +428,7 @@ class DriverProfileEnhancementsTest:
         try:
             response = self.session.put(
                 f"{BASE_URL}/driver/availability/true",
-                headers=headers,
+                headers=compat_headers,
                 timeout=TIMEOUT
             )
             
@@ -397,7 +446,7 @@ class DriverProfileEnhancementsTest:
         try:
             response = self.session.get(
                 f"{BASE_URL}/driver/ride-requests",
-                headers=headers,
+                headers=compat_headers,
                 timeout=TIMEOUT
             )
             
