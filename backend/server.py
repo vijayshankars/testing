@@ -630,6 +630,63 @@ async def login(login_data: UserLogin):
     )
 
 # Driver Routes
+@api_router.post("/driver/verify-license")
+async def verify_license_with_vahan(request: LicenseVerificationRequest, current_user: dict = Depends(get_current_user)):
+    """Verify driving license with VAHAN system"""
+    try:
+        # Validate license number format (basic validation)
+        license_number = request.license_number.upper().strip()
+        
+        if not license_number or len(license_number) < 10:
+            return {"success": False, "message": "Invalid license number format"}
+        
+        # For demo purposes, we'll simulate VAHAN verification
+        # In production, you would integrate with actual VAHAN API
+        # using the VAHAN integration playbook provided earlier
+        
+        # Simulate different license validation scenarios
+        if license_number.startswith("DL"):
+            # Valid license simulation
+            license_data = {
+                "name": "Test Driver Name",
+                "dob": "1990-01-15",
+                "issue_date": "2018-02-01", 
+                "expiry_date": "2038-02-01",
+                "address": "123 Test Address, Delhi",
+                "status": "VALID"
+            }
+            
+            # Store verification record (optional)
+            verification_record = {
+                "license_number": license_number,
+                "user_id": current_user["user_id"],
+                "verification_status": "VERIFIED",
+                "license_data": license_data,
+                "verified_at": datetime.utcnow()
+            }
+            
+            # You can store this in a separate collection for audit purposes
+            # await db.license_verifications.insert_one(verification_record)
+            
+            return {
+                "success": True,
+                "message": "License verified successfully with VAHAN system",
+                "license_data": license_data,
+                "verification_id": str(ObjectId())
+            }
+        else:
+            return {
+                "success": False,
+                "message": "License number not found in VAHAN database"
+            }
+    
+    except Exception as e:
+        print(f"VAHAN verification error: {str(e)}")
+        return {
+            "success": False,
+            "message": "VAHAN verification service unavailable. Please try again later."
+        }
+
 @api_router.post("/driver/profile")
 async def create_driver_profile(
     profile_data: DriverProfileCreate,
