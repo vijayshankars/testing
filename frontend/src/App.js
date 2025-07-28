@@ -1396,7 +1396,108 @@ const RiderDashboard = () => {
   );
 };
 
-// UPI Payment Component
+// Location Autocomplete Component
+const LocationAutocomplete = ({ 
+  placeholder, 
+  value, 
+  onChange, 
+  onLocationSelect, 
+  suggestions = [], 
+  showCurrentLocation = false,
+  onUseCurrentLocation 
+}) => {
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [localSuggestions, setLocalSuggestions] = useState([]);
+  
+  // Common locations for quick selection
+  const commonLocations = [
+    'Airport, Delhi',
+    'Railway Station, Delhi',
+    'Bus Stand, Delhi',
+    'Metro Station, Delhi',
+    'Hospital, Delhi',
+    'Mall, Delhi',
+    'Connaught Place, Delhi',
+    'India Gate, Delhi',
+    'Red Fort, Delhi',
+    'Lotus Temple, Delhi',
+    'Qutub Minar, Delhi',
+    'Chandni Chowk, Delhi'
+  ];
+
+  const handleInputChange = (e) => {
+    const inputValue = e.target.value;
+    onChange(inputValue);
+    
+    if (inputValue.length > 2) {
+      // Filter common locations based on input
+      const filtered = commonLocations.filter(location =>
+        location.toLowerCase().includes(inputValue.toLowerCase())
+      );
+      setLocalSuggestions(filtered);
+      setShowSuggestions(true);
+    } else {
+      setShowSuggestions(false);
+    }
+  };
+
+  const handleSuggestionClick = (suggestion) => {
+    onChange(suggestion);
+    onLocationSelect(suggestion);
+    setShowSuggestions(false);
+  };
+
+  const handleInputFocus = () => {
+    if (value.length <= 2) {
+      setLocalSuggestions(commonLocations.slice(0, 8));
+      setShowSuggestions(true);
+    }
+  };
+
+  return (
+    <div className="relative">
+      <div className="relative">
+        <input
+          type="text"
+          className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          placeholder={placeholder}
+          value={value}
+          onChange={handleInputChange}
+          onFocus={handleInputFocus}
+          onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+        />
+        {showCurrentLocation && (
+          <button
+            type="button"
+            onClick={onUseCurrentLocation}
+            className="absolute right-2 top-2 text-blue-600 hover:text-blue-800"
+            title="Use current location"
+          >
+            <Navigation className="w-5 h-5" />
+          </button>
+        )}
+      </div>
+      
+      {showSuggestions && localSuggestions.length > 0 && (
+        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+          {localSuggestions.map((suggestion, index) => (
+            <button
+              key={index}
+              type="button"
+              className="w-full px-4 py-3 text-left hover:bg-gray-100 focus:bg-gray-100 border-b border-gray-100 last:border-b-0 transition-colors"
+              onClick={() => handleSuggestionClick(suggestion)}
+            >
+              <div className="flex items-center">
+                <MapPin className="w-4 h-4 text-gray-400 mr-3" />
+                <span className="text-sm">{suggestion}</span>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 const UPIPaymentModal = ({ ride, onClose, onPaymentSuccess }) => {
   const [Razorpay] = useRazorpay();
   const [loading, setLoading] = useState(false);
