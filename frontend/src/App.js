@@ -1668,14 +1668,21 @@ const RiderDashboard = () => {
           address: dropLocation
         },
         estimated_distance: estimatedDistance,
-        estimated_fare: estimatedFare
+        estimated_fare: estimatedFare,
+        promo_code: promoCode || null
       };
 
-      await axios.post(`${API}/rider/request-ride`, rideData);
-      alert('Ride requested successfully! Waiting for driver to accept...');
+      const response = await axios.post(`${API}/rider/request-ride`, rideData);
+      
+      if (response.data.discount_applied) {
+        alert(`🎉 Ride requested successfully with discount!\nOriginal fare: ₹${response.data.estimated_fare}\nDiscount: -₹${response.data.discount_applied.discount_amount}\nFinal fare: ₹${response.data.final_fare}\n\nWaiting for driver to accept...`);
+      } else {
+        alert('Ride requested successfully! Waiting for driver to accept...');
+      }
       
       // Clear form after successful request
       clearLocations();
+      clearDiscount();
       
       fetchCurrentRides();
     } catch (error) {
