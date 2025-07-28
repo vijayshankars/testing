@@ -321,10 +321,47 @@ async def create_driver_profile(
     if existing_profile:
         raise HTTPException(status_code=400, detail="Driver profile already exists")
     
-    profile = DriverProfile(**profile_data.dict(), user_id=current_user["id"])
+    # Validate and process documents
+    license_doc = None
+    registration_doc = None
+    
+    if profile_data.license_document:
+        license_doc = process_document(profile_data.license_document)
+        if not license_doc:
+            raise HTTPException(status_code=400, detail="Invalid license document. Please ensure it's a JPG, PNG, or PDF file under 5MB.")
+    
+    if profile_data.registration_document:
+        registration_doc = process_document(profile_data.registration_document)
+        if not registration_doc:
+            raise HTTPException(status_code=400, detail="Invalid registration document. Please ensure it's a JPG, PNG, or PDF file under 5MB.")
+    
+    # Create profile with documents
+    profile_dict = profile_data.dict()
+    profile_dict["user_id"] = current_user["id"]
+    profile_dict["license_document"] = license_doc
+    profile_dict["registration_document"] = registration_doc
+    profile_dict["document_verified"] = False  # Will be verified manually
+    
+    profile = DriverProfile(**profile_dict)
     await db.driver_profiles.insert_one(profile.dict())
     
-    return {"message": "Driver profile created successfully", "profile": profile.dict()}
+    response_data = profile.dict()
+    # Remove document data from response for security
+    if response_data.get("license_document"):
+        response_data["license_document"] = {
+            k: v for k, v in response_data["license_document"].items() 
+            if k != "data"
+        }
+    if response_data.get("registration_document"):
+        response_data["registration_document"] = {
+            k: v for k, v in response_data["registration_document"].items() 
+            if k != "data"
+        }
+    
+    return {
+        "message": "Driver profile created successfully. Documents will be verified within 24 hours.", 
+        "profile": response_data
+    }
 
 @api_router.get("/driver/profile")
 async def get_driver_profile(current_user: dict = Depends(get_current_user)):
