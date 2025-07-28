@@ -1620,16 +1620,20 @@ const RiderDashboard = () => {
     }
 
     try {
-      await axios.post(`${API}/rider/cancel-ride`, {
+      console.log('Attempting to cancel ride:', rideId); // Debug log
+      
+      const response = await axios.post(`${API}/rider/cancel-ride`, {
         ride_id: rideId,
         reason: reason
       });
       
+      console.log('Cancel ride response:', response.data); // Debug log
       alert('Ride cancelled successfully');
-      fetchCurrentRides();
+      fetchCurrentRides(); // Refresh the rides list
     } catch (error) {
       console.error('Error cancelling ride:', error);
-      alert('Failed to cancel ride: ' + (error.response?.data?.detail || 'Unknown error'));
+      const errorMessage = error.response?.data?.detail || error.message || 'Unknown error';
+      alert('Failed to cancel ride: ' + errorMessage);
     }
   };
 
