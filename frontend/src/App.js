@@ -668,11 +668,12 @@ const DriverDashboard = () => {
         prevRequests.filter(request => request.id !== rideId)
       );
       
-      alert('Ride accepted successfully! The rider has been notified.');
+      alert(`Ride accepted successfully! Ride OTP: ${response.data.ride_otp}\nShare this OTP with the rider for verification.`);
       
-      // Refresh the list after a short delay
+      // Refresh the lists
       setTimeout(() => {
         fetchRideRequests();
+        fetchAcceptedRides();
       }, 2000);
       
     } catch (error) {
@@ -680,8 +681,62 @@ const DriverDashboard = () => {
       const errorMessage = error.response?.data?.detail || 'Failed to accept ride';
       alert(`Error: ${errorMessage}`);
       
-      // Refresh the list in case the ride was taken by another driver
       fetchRideRequests();
+    }
+  };
+
+  const fetchAcceptedRides = async () => {
+    try {
+      const response = await axios.get(`${API}/driver/ride-history?status=accepted`);
+      setAcceptedRides(response.data.rides);
+    } catch (error) {
+      console.error('Error fetching accepted rides:', error);
+    }
+  };
+
+  const fetchRideHistory = async () => {
+    try {
+      const response = await axios.get(`${API}/driver/ride-history?limit=50`);
+      setRideHistory(response.data.rides);
+    } catch (error) {
+      console.error('Error fetching ride history:', error);
+    }
+  };
+
+  const verifyRideOTP = async (rideId, otpCode) => {
+    try {
+      await axios.post(`${API}/driver/verify-ride-otp`, {
+        ride_id: rideId,
+        otp_code: otpCode
+      });
+      
+      alert('OTP verified successfully! Ride started.');
+      setSelectedRideForOTP(null);
+      setOtpInput('');
+      fetchAcceptedRides();
+    } catch (error) {
+      console.error('Error verifying OTP:', error);
+      alert('Invalid OTP. Please try again.');
+    }
+  };
+
+  const completeRide = async (rideId) => {
+    if (!confirm('Mark this ride as completed?')) {
+      return;
+    }
+
+    try {
+      await axios.post(`${API}/driver/complete-ride`, {
+        ride_id: rideId,
+        status: 'completed'
+      });
+      
+      alert('Ride completed successfully!');
+      fetchAcceptedRides();
+      fetchRideHistory();
+    } catch (error) {
+      console.error('Error completing ride:', error);
+      alert('Failed to complete ride');
     }
   };
 
