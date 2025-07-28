@@ -764,6 +764,251 @@ def test_database_integration(result: TestResult):
         except Exception as e:
             result.log_failure("Database integration", str(e))
 
+def test_nearby_ride_requests_scenario(result: TestResult):
+    """Test the complete nearby ride requests functionality as requested"""
+    print(f"\n{'='*60}")
+    print("12. NEARBY RIDE REQUESTS SCENARIO TESTING")
+    print(f"{'='*60}")
+    
+    # Test data for the specific scenario
+    test_rider_data = {
+        "email": "testrider.nearby@example.com",
+        "password": "password123",
+        "name": "Test Rider Nearby",
+        "phone": "+1234567890",
+        "user_type": "rider"
+    }
+    
+    test_driver_data = {
+        "email": "testdriver.nearby@example.com", 
+        "password": "password123",
+        "name": "Test Driver Nearby",
+        "phone": "+1234567891",
+        "user_type": "driver"
+    }
+    
+    test_driver_profile = {
+        "per_km_rate": 20.0,
+        "vehicle_type": "sedan",
+        "vehicle_number": "DL01XY9876",
+        "license_number": "DL9876543210"
+    }
+    
+    # Delhi coordinates as specified
+    delhi_location = {"lat": 28.6139, "lng": 77.2090}
+    
+    # Sample ride request data
+    sample_ride_data = {
+        "pickup_location": {
+            "lat": 28.6129, 
+            "lng": 77.2295, 
+            "address": "India Gate, Delhi"
+        },
+        "drop_location": {
+            "lat": 28.6562, 
+            "lng": 77.2410, 
+            "address": "Red Fort, Delhi"
+        },
+        "estimated_distance": 5.2,
+        "estimated_fare": 104.0
+    }
+    
+    test_rider_token = None
+    test_driver_token = None
+    test_ride_id = None
+    
+    # Step 1: Register test rider
+    try:
+        response = make_request("POST", "/auth/register", test_rider_data)
+        if response.status_code == 200:
+            data = response.json()
+            test_rider_token = data["token"]
+            result.log_success("Step 1 - Test rider registration")
+        else:
+            result.log_failure("Step 1", f"Rider registration failed: {response.status_code} - {response.text}")
+            return
+    except Exception as e:
+        result.log_failure("Step 1", f"Rider registration error: {str(e)}")
+        return
+    
+    # Step 2: Register test driver
+    try:
+        response = make_request("POST", "/auth/register", test_driver_data)
+        if response.status_code == 200:
+            data = response.json()
+            test_driver_token = data["token"]
+            result.log_success("Step 2 - Test driver registration")
+        else:
+            result.log_failure("Step 2", f"Driver registration failed: {response.status_code} - {response.text}")
+            return
+    except Exception as e:
+        result.log_failure("Step 2", f"Driver registration error: {str(e)}")
+        return
+    
+    # Step 3: Create driver profile
+    try:
+        driver_headers = get_auth_headers(test_driver_token)
+        response = make_request("POST", "/driver/profile", test_driver_profile, driver_headers)
+        if response.status_code == 200:
+            result.log_success("Step 3 - Driver profile creation")
+        else:
+            result.log_failure("Step 3", f"Driver profile creation failed: {response.status_code} - {response.text}")
+            return
+    except Exception as e:
+        result.log_failure("Step 3", f"Driver profile creation error: {str(e)}")
+        return
+    
+    # Step 4: Set driver location to Delhi coordinates
+    try:
+        response = make_request("PUT", "/driver/location", delhi_location, driver_headers)
+        if response.status_code == 200:
+            result.log_success("Step 4 - Driver location set to Delhi coordinates")
+        else:
+            result.log_failure("Step 4", f"Driver location update failed: {response.status_code} - {response.text}")
+            return
+    except Exception as e:
+        result.log_failure("Step 4", f"Driver location update error: {str(e)}")
+        return
+    
+    # Step 5: Set driver availability to true
+    try:
+        response = make_request("PUT", "/driver/availability/true", headers=driver_headers)
+        if response.status_code == 200:
+            result.log_success("Step 5 - Driver availability set to available")
+        else:
+            result.log_failure("Step 5", f"Driver availability update failed: {response.status_code} - {response.text}")
+            return
+    except Exception as e:
+        result.log_failure("Step 5", f"Driver availability update error: {str(e)}")
+        return
+    
+    # Step 6: Create ride request from rider
+    try:
+        rider_headers = get_auth_headers(test_rider_token)
+        response = make_request("POST", "/rider/request-ride", sample_ride_data, rider_headers)
+        if response.status_code == 200:
+            data = response.json()
+            test_ride_id = data["id"]
+            if data["status"] == "requested":
+                result.log_success("Step 6 - Ride request created successfully")
+            else:
+                result.log_failure("Step 6", f"Ride request created but status is {data['status']}")
+                return
+        else:
+            result.log_failure("Step 6", f"Ride request creation failed: {response.status_code} - {response.text}")
+            return
+    except Exception as e:
+        result.log_failure("Step 6", f"Ride request creation error: {str(e)}")
+        return
+    
+    # Step 7: Test driver can see nearby ride requests
+    try:
+        response = make_request("GET", "/driver/ride-requests", headers=driver_headers)
+        if response.status_code == 200:
+            data = response.json()
+            if isinstance(data, list):
+                # Check if our ride request is in the list
+                found_ride = None
+                for ride in data:
+                    if ride.get("id") == test_ride_id:
+                        found_ride = ride
+                        break
+                
+                if found_ride:
+                    # Verify ride contains all required fields
+                    required_fields = ["id", "rider_id", "pickup_location", "drop_location", "estimated_distance", "estimated_fare", "status", "distance_to_pickup"]
+                    if all(field in found_ride for field in required_fields):
+                        result.log_success("Step 7 - Driver can see nearby ride request with all required fields")
+                        
+                        # Verify distance calculation
+                        if "distance_to_pickup" in found_ride and isinstance(found_ride["distance_to_pickup"], (int, float)):
+                            result.log_success("Step 7a - Distance calculation working correctly")
+                        else:
+                            result.log_failure("Step 7a", "Distance calculation not working properly")
+                    else:
+                        missing_fields = [field for field in required_fields if field not in found_ride]
+                        result.log_failure("Step 7", f"Ride request missing required fields: {missing_fields}")
+                else:
+                    result.log_failure("Step 7", f"Driver cannot see the ride request {test_ride_id} in nearby requests")
+            else:
+                result.log_failure("Step 7", f"Expected list of ride requests, got: {type(data)}")
+        else:
+            result.log_failure("Step 7", f"Failed to get nearby ride requests: {response.status_code} - {response.text}")
+    except Exception as e:
+        result.log_failure("Step 7", f"Get nearby ride requests error: {str(e)}")
+    
+    # Step 8: Test driver accepting ride request
+    if test_ride_id:
+        try:
+            response = make_request("POST", f"/driver/accept-ride/{test_ride_id}", headers=driver_headers)
+            if response.status_code == 200:
+                data = response.json()
+                if "message" in data and "accepted" in data["message"].lower():
+                    result.log_success("Step 8 - Driver successfully accepted ride request")
+                else:
+                    result.log_failure("Step 8", f"Unexpected response: {data}")
+            else:
+                result.log_failure("Step 8", f"Driver accept ride failed: {response.status_code} - {response.text}")
+        except Exception as e:
+            result.log_failure("Step 8", f"Driver accept ride error: {str(e)}")
+    
+    # Step 9: Verify ride status update after acceptance
+    if test_ride_id:
+        try:
+            response = make_request("GET", "/rider/rides", headers=rider_headers)
+            if response.status_code == 200:
+                data = response.json()
+                if isinstance(data, list) and len(data) > 0:
+                    # Find our ride
+                    accepted_ride = None
+                    for ride in data:
+                        if ride.get("id") == test_ride_id:
+                            accepted_ride = ride
+                            break
+                    
+                    if accepted_ride:
+                        if accepted_ride.get("status") == "accepted":
+                            result.log_success("Step 9 - Ride status updated to 'accepted' correctly")
+                            
+                            # Check if driver info is populated
+                            if "driver_info" in accepted_ride and accepted_ride["driver_info"]:
+                                driver_info = accepted_ride["driver_info"]
+                                if all(key in driver_info for key in ["name", "phone", "vehicle_type", "vehicle_number"]):
+                                    result.log_success("Step 9a - Driver information populated correctly in ride")
+                                else:
+                                    result.log_failure("Step 9a", f"Driver info incomplete: {driver_info}")
+                            else:
+                                result.log_failure("Step 9a", "Driver info not populated in accepted ride")
+                        else:
+                            result.log_failure("Step 9", f"Ride status is {accepted_ride.get('status')}, expected 'accepted'")
+                    else:
+                        result.log_failure("Step 9", "Could not find the ride in rider's rides list")
+                else:
+                    result.log_failure("Step 9", "No rides found for rider")
+            else:
+                result.log_failure("Step 9", f"Failed to get rider rides: {response.status_code} - {response.text}")
+        except Exception as e:
+            result.log_failure("Step 9", f"Verify ride status error: {str(e)}")
+    
+    # Step 10: Verify driver no longer sees the accepted ride in nearby requests
+    try:
+        response = make_request("GET", "/driver/ride-requests", headers=driver_headers)
+        if response.status_code == 200:
+            data = response.json()
+            if isinstance(data, list):
+                # Check that our accepted ride is no longer in the list
+                found_ride = any(ride.get("id") == test_ride_id for ride in data)
+                if not found_ride:
+                    result.log_success("Step 10 - Accepted ride no longer appears in nearby requests")
+                else:
+                    result.log_failure("Step 10", "Accepted ride still appears in nearby requests")
+            else:
+                result.log_failure("Step 10", f"Expected list of ride requests, got: {type(data)}")
+        else:
+            result.log_failure("Step 10", f"Failed to get nearby ride requests: {response.status_code} - {response.text}")
+    except Exception as e:
+        result.log_failure("Step 10", f"Verify accepted ride removal error: {str(e)}")
+
 def main():
     """Run all tests"""
     print("🚗 RideShare Backend API Testing")
@@ -784,6 +1029,9 @@ def main():
     test_razorpay_webhook(result)
     test_payment_error_handling(result)
     test_database_integration(result)
+    
+    # Run the specific nearby ride requests scenario test
+    test_nearby_ride_requests_scenario(result)
     
     # Print summary
     result.summary()
