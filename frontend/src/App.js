@@ -886,22 +886,62 @@ const RiderDashboard = () => {
     }
   };
 
+  const clearLocations = () => {
+    setPickupLocation('');
+    setDropLocation('');
+    setEstimatedFare(0);
+    setEstimatedDistance(0);
+    
+    // Clear markers
+    if (pickupMarker) {
+      pickupMarker.setMap(null);
+      setPickupMarker(null);
+    }
+    if (dropMarker) {
+      dropMarker.setMap(null);
+      setDropMarker(null);
+    }
+    
+    // Reset map view to current location
+    if (mapInstance && currentLocation) {
+      mapInstance.setCenter(currentLocation);
+      mapInstance.setZoom(15);
+    }
+  };
+
   const requestRide = async () => {
     if (!pickupLocation || !dropLocation || !estimatedDistance) {
-      alert('Please enter pickup and drop locations');
+      alert('Please enter pickup and drop locations and calculate fare');
       return;
     }
 
     try {
+      // Get actual coordinates from markers if available
+      let pickupCoords = currentLocation;
+      let dropCoords = {
+        lat: currentLocation.lat + (Math.random() - 0.5) * 0.01,
+        lng: currentLocation.lng + (Math.random() - 0.5) * 0.01
+      };
+
+      if (pickupMarker && pickupMarker.getPosition) {
+        const pos = pickupMarker.getPosition();
+        pickupCoords = { lat: pos.lat(), lng: pos.lng() };
+      }
+
+      if (dropMarker && dropMarker.getPosition) {
+        const pos = dropMarker.getPosition();
+        dropCoords = { lat: pos.lat(), lng: pos.lng() };
+      }
+
       const rideData = {
         pickup_location: {
-          lat: currentLocation.lat,
-          lng: currentLocation.lng,
+          lat: pickupCoords.lat,
+          lng: pickupCoords.lng,
           address: pickupLocation
         },
         drop_location: {
-          lat: currentLocation.lat + (Math.random() - 0.5) * 0.01,
-          lng: currentLocation.lng + (Math.random() - 0.5) * 0.01,
+          lat: dropCoords.lat,
+          lng: dropCoords.lng,
           address: dropLocation
         },
         estimated_distance: estimatedDistance,
@@ -909,18 +949,15 @@ const RiderDashboard = () => {
       };
 
       await axios.post(`${API}/rider/request-ride`, rideData);
-      alert('Ride requested successfully!');
+      alert('Ride requested successfully! Waiting for driver to accept...');
       
-      // Clear form
-      setPickupLocation('');
-      setDropLocation('');
-      setEstimatedFare(0);
-      setEstimatedDistance(0);
+      // Clear form after successful request
+      clearLocations();
       
       fetchCurrentRides();
     } catch (error) {
       console.error('Error requesting ride:', error);
-      alert('Failed to request ride');
+      alert('Failed to request ride. Please try again.');
     }
   };
 
