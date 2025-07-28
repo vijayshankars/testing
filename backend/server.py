@@ -148,9 +148,14 @@ class RideRequest(BaseModel):
     estimated_fare: float
     status: str = "requested"  # requested, accepted, in_progress, completed, cancelled
     driver_id: Optional[str] = None
+    ride_otp: Optional[str] = None  # 4-digit OTP for ride verification
+    otp_verified: bool = False
     created_at: datetime = Field(default_factory=datetime.utcnow)
     accepted_at: Optional[datetime] = None
+    started_at: Optional[datetime] = None  # When OTP is verified
     completed_at: Optional[datetime] = None
+    cancelled_at: Optional[datetime] = None
+    cancellation_reason: Optional[str] = None
 
 class RideRequestCreate(BaseModel):
     pickup_location: Dict[str, Any]
