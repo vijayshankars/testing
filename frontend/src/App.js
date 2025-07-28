@@ -553,6 +553,43 @@ const DriverDashboard = () => {
   const { user, logout } = useAuth();
   const { getUserLocation } = useGoogleMaps();
   
+  const verifyLicenseWithVahan = async () => {
+    if (!profileForm.license_number) {
+      alert('Please enter license number first');
+      return;
+    }
+    
+    setIsVerifyingLicense(true);
+    setLicenseVerificationStatus(null);
+    
+    try {
+      const response = await axios.post(`${API}/driver/verify-license`, {
+        license_number: profileForm.license_number
+      });
+      
+      if (response.data.success) {
+        setLicenseVerificationStatus({
+          success: true,
+          message: 'License verified successfully with VAHAN system!',
+          data: response.data.license_data
+        });
+      } else {
+        setLicenseVerificationStatus({
+          success: false,
+          message: response.data.message || 'License verification failed'
+        });
+      }
+    } catch (error) {
+      console.error('License verification error:', error);
+      setLicenseVerificationStatus({
+        success: false,
+        message: error.response?.data?.detail || 'License verification service unavailable. Please try again later.'
+      });
+    } finally {
+      setIsVerifyingLicense(false);
+    }
+  };
+  
   // Use notification system
   const { notificationPermission } = useDriverNotifications(isAvailable, rideRequests);
 
