@@ -935,7 +935,220 @@ const RiderDashboard = () => {
   );
 };
 
-// Protected Route Component
+// UPI Payment Component
+const UPIPaymentModal = ({ ride, onClose, onPaymentSuccess }) => {
+  const [Razorpay] = useRazorpay();
+  const [loading, setLoading] = useState(false);
+  const [paymentConfig, setPaymentConfig] = useState(null);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    fetchPaymentConfig();
+  }, []);
+
+  const fetchPaymentConfig = async () => {
+    try {
+      const response = await axios.get(`${API}/payment-config`);
+      setPaymentConfig(response.data);
+    } catch (error) {
+      console.error('Error fetching payment config:', error);
+    }
+  };
+
+  const handleUPIPayment = async () => {
+    if (!paymentConfig?.razorpay_enabled) {
+      alert('UPI payments not available. Please try again later.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Create Razorpay order
+      const orderResponse = await axios.post(`${API}/payment/razorpay/create-order`, {
+        ride_id: ride.id
+      });
+
+      const options = {
+        key: paymentConfig.razorpay_key_id,
+        amount: orderResponse.data.amount,
+        currency: orderResponse.data.currency,
+        order_id: orderResponse.data.order_id,
+        name: "RideShare",
+        description: `Payment for ride from ${ride.pickup_location.address} to ${ride.drop_location.address}`,
+        image: "https://cdn-icons-png.flaticon.com/512/3448/3448339.png",
+        handler: async (response) => {
+          try {
+            // Verify payment
+            const verifyResponse = await axios.post(`${API}/payment/razorpay/verify`, {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature
+            });
+
+            if (verifyResponse.data.status === 'success') {
+              onPaymentSuccess();
+              onClose();
+              alert('Payment successful! Your ride is now in progress.');
+            }
+          } catch (error) {
+            console.error('Payment verification failed:', error);
+            alert('Payment verification failed. Please contact support.');
+          }
+        },
+        prefill: {
+          name: user?.name || '',
+          email: user?.email || '',
+          contact: user?.phone || ''
+        },
+        notes: {
+          ride_id: ride.id,
+          pickup: ride.pickup_location.address,
+          drop: ride.drop_location.address
+        },
+        theme: {
+          color: "#2563eb"
+        },
+        method: {
+          upi: true,
+          card: true,
+          netbanking: true,
+          wallet: true
+        }
+      };
+
+      const razorpayInstance = new Razorpay(options);
+      
+      razorpayInstance.on('payment.failed', (response) => {
+        console.error('Payment failed:', response.error);
+        alert(`Payment failed: ${response.error.description}`);
+      });
+
+      razorpayInstance.open();
+    } catch (error) {
+      console.error('Error initiating payment:', error);
+      alert('Failed to initiate payment. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!ride) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-2xl w-full max-w-md">
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-bold text-gray-900">Complete Payment</h2>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600"
+            >
+              <XCircle className="w-6 h-6" />
+            </button>
+          </div>
+
+          {/* Ride Details */}
+          <div className="bg-gray-50 rounded-lg p-4 mb-6">
+            <div className="space-y-3">
+              <div className="flex items-center">
+                <MapPin className="w-4 h-4 text-green-600 mr-2" />
+                <div>
+                  <span className="text-sm text-gray-600">From:</span>
+                  <p className="font-medium">{ride.pickup_location.address}</p>
+                </div>
+              </div>
+              
+              <div className="flex items-center">
+                <Navigation className="w-4 h-4 text-red-600 mr-2" />
+                <div>
+                  <span className="text-sm text-gray-600">To:</span>
+                  <p className="font-medium">{ride.drop_location.address}</p>
+                </div>
+              </div>
+
+              <div className="border-t pt-3 mt-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Distance:</span>
+                  <span className="font-medium">{ride.estimated_distance.toFixed(1)} km</span>
+                </div>
+                <div className="flex justify-between items-center mt-2">
+                  <span className="text-lg font-semibold">Total Fare:</span>
+                  <span className="text-2xl font-bold text-green-600 flex items-center">
+                    <IndianRupee className="w-5 h-5 mr-1" />
+                    {ride.estimated_fare}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Driver Info */}
+          {ride.driver_info && (
+            <div className="bg-blue-50 rounded-lg p-4 mb-6">
+              <h3 className="font-semibold mb-2">Driver Details</h3>
+              <div className="space-y-1 text-sm">
+                <p><span className="font-medium">Name:</span> {ride.driver_info.name}</p>
+                <p><span className="font-medium">Vehicle:</span> {ride.driver_info.vehicle_type} ({ride.driver_info.vehicle_number})</p>
+                <p><span className="font-medium">Phone:</span> {ride.driver_info.phone}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Payment Methods */}
+          <div className="mb-6">
+            <h3 className="font-semibold mb-3">Choose Payment Method</h3>
+            
+            <button
+              onClick={handleUPIPayment}
+              disabled={loading || !paymentConfig?.razorpay_enabled}
+              className="w-full bg-blue-600 text-white py-4 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors mb-3"
+            >
+              <div className="flex items-center justify-center">
+                <Smartphone className="w-5 h-5 mr-2" />
+                {loading ? 'Processing...' : 'Pay with UPI / Cards / Wallet'}
+              </div>
+            </button>
+
+            <div className="grid grid-cols-4 gap-2 text-center text-xs text-gray-600">
+              <div className="flex flex-col items-center">
+                <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center mb-1">
+                  <span className="font-bold text-orange-600">₹</span>
+                </div>
+                <span>UPI</span>
+              </div>
+              <div className="flex flex-col items-center">
+                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mb-1">
+                  <CreditCard className="w-4 h-4 text-blue-600" />
+                </div>
+                <span>Cards</span>
+              </div>
+              <div className="flex flex-col items-center">
+                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mb-1">
+                  <span className="font-bold text-green-600">NB</span>
+                </div>
+                <span>NetBanking</span>
+              </div>
+              <div className="flex flex-col items-center">
+                <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mb-1">
+                  <span className="font-bold text-purple-600">W</span>
+                </div>
+                <span>Wallets</span>
+              </div>
+            </div>
+          </div>
+
+          {!paymentConfig?.razorpay_enabled && (
+            <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg text-sm">
+              <p className="font-medium">Demo Mode</p>
+              <p>UPI payments are in demo mode. Use test credentials when prompted.</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
 const ProtectedRoute = ({ children, requiredUserType }) => {
   const { user, loading } = useAuth();
 
