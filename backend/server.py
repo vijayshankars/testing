@@ -767,14 +767,19 @@ async def accept_ride(ride_id: str, current_user: dict = Depends(get_current_use
     if not ride:
         raise HTTPException(status_code=404, detail="Ride request not found or already accepted")
     
-    # Update ride with driver info
+    # Generate ride OTP for verification
+    ride_otp = generate_ride_otp()
+    
+    # Update ride with driver info and OTP
     result = await db.ride_requests.update_one(
         {"id": ride_id, "status": "requested"},
         {
             "$set": {
                 "driver_id": current_user["id"],
                 "status": "accepted",
-                "accepted_at": datetime.utcnow()
+                "accepted_at": datetime.utcnow(),
+                "ride_otp": ride_otp,
+                "otp_verified": False
             }
         }
     )
@@ -782,7 +787,11 @@ async def accept_ride(ride_id: str, current_user: dict = Depends(get_current_use
     if result.matched_count == 0:
         raise HTTPException(status_code=400, detail="Failed to accept ride")
     
-    return {"message": "Ride accepted successfully"}
+    return {
+        "message": "Ride accepted successfully", 
+        "ride_otp": ride_otp,
+        "instructions": "Share the OTP with the rider for verification"
+    }
 
 # Rider Routes
 @api_router.post("/rider/request-ride", response_model=RideResponse)
