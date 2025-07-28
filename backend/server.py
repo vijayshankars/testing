@@ -128,12 +128,14 @@ class DriverProfile(BaseModel):
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 class DriverProfileCreate(BaseModel):
-    per_km_rate: float
     vehicle_type: str
     vehicle_number: str
     license_number: str
     license_document: Optional[Dict[str, Any]] = None
     registration_document: Optional[Dict[str, Any]] = None
+
+class LicenseVerificationRequest(BaseModel):
+    license_number: str
 
 class DriverLocationUpdate(BaseModel):
     lat: float
