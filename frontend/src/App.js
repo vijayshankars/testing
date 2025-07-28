@@ -3688,7 +3688,7 @@ const AdminDashboard = () => {
                     key={type}
                     onClick={() => {
                       setSelectedUserType(type);
-                      fetchUsers(type === 'all' ? null : type);
+                      fetchUsers(type === 'all' ? null : type, mobileSearch || null);
                     }}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                       selectedUserType === type
