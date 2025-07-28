@@ -125,6 +125,34 @@ class RideResponse(BaseModel):
     driver_info: Optional[Dict[str, Any]] = None
     created_at: datetime
 
+class PaymentTransaction(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    ride_id: str
+    rider_id: str
+    driver_id: Optional[str] = None
+    amount: float
+    currency: str = "inr"
+    session_id: Optional[str] = None
+    payment_id: Optional[str] = None
+    payment_status: str = "pending"  # pending, paid, failed, cancelled
+    status: str = "initiated"  # initiated, processing, completed, failed
+    stripe_session_url: Optional[str] = None
+    metadata: Optional[Dict[str, Any]] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+class PaymentRequest(BaseModel):
+    ride_id: str
+    origin_url: str
+
+class PaymentStatusResponse(BaseModel):
+    payment_id: str
+    status: str
+    payment_status: str
+    amount: float
+    currency: str
+    ride_info: Optional[Dict[str, Any]] = None
+
 # Utility Functions
 def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
