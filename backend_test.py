@@ -1947,6 +1947,10 @@ def main():
     test_basic_health_check(result)
     test_authentication_system(result)
     test_mobile_otp_authentication_system(result)  # New Mobile OTP tests
+    
+    # Test VAHAN vehicle verification integration
+    test_vahan_vehicle_verification_system(result)
+    
     test_driver_functionality(result)
     test_rider_functionality(result)
     test_ride_matching_system(result)
