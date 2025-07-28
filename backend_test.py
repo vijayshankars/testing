@@ -775,6 +775,10 @@ def main():
     test_rider_functionality(result)
     test_ride_matching_system(result)
     test_error_handling(result)
+    test_payment_configuration(result)
+    test_razorpay_payment_integration(result)
+    test_razorpay_webhook(result)
+    test_payment_error_handling(result)
     test_database_integration(result)
     
     # Print summary
