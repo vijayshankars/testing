@@ -973,34 +973,108 @@ const DriverDashboard = () => {
             </div>
           </div>
 
-          {/* Ride Requests */}
-          <div className={`lg:col-span-2 bg-white rounded-lg shadow p-6 transition-all duration-300 ${flashEffect ? 'ring-4 ring-green-400 bg-green-50' : ''}`}>
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold flex items-center">
-                Nearby Ride Requests
-                {notificationPermission !== 'granted' && (
-                  <button
-                    onClick={() => Notification.requestPermission()}
-                    className="ml-2 text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-full hover:bg-blue-200"
-                    title="Enable notifications for new ride requests"
-                  >
-                    🔔 Enable Alerts
-                  </button>
-                )}
-              </h2>
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={fetchRideRequests}
-                  className="text-blue-600 hover:text-blue-800 text-sm"
-                >
-                  Refresh
-                </button>
-                <div className={`w-2 h-2 rounded-full ${isAvailable ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                <span className="text-sm text-gray-600">
-                  {isAvailable ? 'Receiving requests' : 'Offline'}
-                </span>
+          {/* Ride Requests and Active Rides */}
+          <div className="lg:col-span-2 space-y-6">
+            
+            {/* Accepted Rides */}
+            {acceptedRides.length > 0 && (
+              <div className="bg-white rounded-lg shadow p-6">
+                <h2 className="text-lg font-semibold mb-4 text-green-600">Your Active Rides</h2>
+                <div className="space-y-4">
+                  {acceptedRides.map((ride) => (
+                    <div key={ride.id} className="border border-green-200 rounded-lg p-4 bg-green-50">
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex-1">
+                          <div className="flex items-center mb-2">
+                            <MapPin className="w-4 h-4 text-green-600 mr-2" />
+                            <span className="text-sm text-gray-600">From:</span>
+                            <span className="ml-2 font-medium">{ride.pickup_location.address}</span>
+                          </div>
+                          <div className="flex items-center mb-3">
+                            <Navigation className="w-4 h-4 text-red-600 mr-2" />
+                            <span className="text-sm text-gray-600">To:</span>
+                            <span className="ml-2 font-medium">{ride.drop_location.address}</span>
+                          </div>
+                          
+                          <div className="grid grid-cols-3 gap-4 text-sm mb-3">
+                            <div className="bg-white rounded p-2 text-center">
+                              <div className="font-semibold text-green-600">₹{ride.estimated_fare}</div>
+                              <div className="text-gray-600 text-xs">Fare</div>
+                            </div>
+                            <div className="bg-white rounded p-2 text-center">
+                              <div className="font-semibold text-blue-600">{ride.estimated_distance.toFixed(1)} km</div>
+                              <div className="text-gray-600 text-xs">Distance</div>
+                            </div>
+                            <div className="bg-white rounded p-2 text-center">
+                              <div className="font-semibold text-purple-600">
+                                {ride.ride_otp || '----'}
+                              </div>
+                              <div className="text-gray-600 text-xs">Ride OTP</div>
+                            </div>
+                          </div>
+
+                          {ride.rider_info && (
+                            <div className="text-sm text-gray-600 bg-white rounded p-2">
+                              <div><strong>Rider:</strong> {ride.rider_info.name}</div>
+                              <div><strong>Phone:</strong> {ride.rider_info.phone}</div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2">
+                        {ride.status === 'accepted' && (
+                          <button
+                            onClick={() => setSelectedRideForOTP(ride)}
+                            className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                          >
+                            Verify OTP & Start
+                          </button>
+                        )}
+                        
+                        {ride.status === 'in_progress' && (
+                          <button
+                            onClick={() => completeRide(ride.id)}
+                            className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors"
+                          >
+                            Complete Ride
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
+
+            {/* Nearby Ride Requests */}
+            <div className={`bg-white rounded-lg shadow p-6 transition-all duration-300 ${flashEffect ? 'ring-4 ring-green-400 bg-green-50' : ''}`}>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-semibold flex items-center">
+                  Nearby Ride Requests
+                  {notificationPermission !== 'granted' && (
+                    <button
+                      onClick={() => Notification.requestPermission()}
+                      className="ml-2 text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-full hover:bg-blue-200"
+                      title="Enable notifications for new ride requests"
+                    >
+                      🔔 Enable Alerts
+                    </button>
+                  )}
+                </h2>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={fetchRideRequests}
+                    className="text-blue-600 hover:text-blue-800 text-sm"
+                  >
+                    Refresh
+                  </button>
+                  <div className={`w-2 h-2 rounded-full ${isAvailable ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                  <span className="text-sm text-gray-600">
+                    {isAvailable ? 'Receiving requests' : 'Offline'}
+                  </span>
+                </div>
+              </div>
             
             {!isAvailable ? (
               <div className="text-center py-8 text-gray-500">
