@@ -1,6 +1,7 @@
 import React, { useState, useEffect, createContext, useContext } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { Loader } from '@googlemaps/js-api-loader';
+import { useRazorpay, RazorpayOrderOptions } from 'react-razorpay';
 import axios from 'axios';
 import { 
   Car, 
@@ -14,7 +15,12 @@ import {
   Users,
   Settings,
   Eye,
-  EyeOff
+  EyeOff,
+  CreditCard,
+  Smartphone,
+  CheckCircle,
+  XCircle,
+  IndianRupee
 } from 'lucide-react';
 import './App.css';
 
