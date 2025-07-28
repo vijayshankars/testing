@@ -241,7 +241,19 @@ class AuthResponse(BaseModel):
     token: Optional[str] = None
     is_new_user: bool = False
 
-# Utility Functions
+class AdminDashboardData(BaseModel):
+    total_users: int
+    total_drivers: int
+    total_riders: int
+    total_rides: int
+    active_rides: int
+    pending_verifications: int
+    recent_users: List[Dict[str, Any]]
+    recent_rides: List[Dict[str, Any]]
+
+class UserManagementAction(BaseModel):
+    user_id: str
+    action: str  # "activate", "deactivate", "verify_driver", "reject_driver"
 def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
