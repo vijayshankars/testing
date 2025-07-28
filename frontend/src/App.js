@@ -1669,7 +1669,7 @@ const RiderDashboard = () => {
 
   const calculateFare = () => {
     if (!pickupLocation || !dropLocation || !currentLocation) {
-      alert('Please enter both pickup and drop locations');
+      alert('Please enter your destination and ensure pickup location is set');
       return;
     }
 
