@@ -1163,66 +1163,68 @@ const DriverDashboard = () => {
               )}
             </div>
             
-            {/* Cancel Confirmation Modal */}
-            {showCancelModal && selectedRideForCancel && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                <div className="bg-white rounded-lg shadow-2xl w-full max-w-md">
-                  <div className="p-6">
-                    <div className="flex justify-between items-center mb-6">
-                      <h2 className="text-xl font-bold text-gray-900">Cancel Ride</h2>
-                      <button
-                        onClick={() => {
-                          setShowCancelModal(false);
-                          setSelectedRideForCancel(null);
-                        }}
-                        className="text-gray-400 hover:text-gray-600"
-                      >
-                        <XCircle className="w-6 h-6" />
-                      </button>
-                    </div>
+      </div>
 
-                    <div className="space-y-4">
-                      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                        <div className="flex items-center">
-                          <XCircle className="w-8 h-8 text-red-600 mr-3" />
-                          <div>
-                            <h3 className="font-medium text-red-900 mb-1">Cancel Ride Confirmation</h3>
-                            <p className="text-sm text-red-700">
-                              Are you sure you want to cancel this ride? This action cannot be undone.
-                            </p>
-                          </div>
-                        </div>
-                      </div>
+      {/* Cancel Confirmation Modal */}
+      {showCancelModal && selectedRideForCancel && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-2xl w-full max-w-md">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold text-gray-900">Cancel Ride</h2>
+                <button
+                  onClick={() => {
+                    setShowCancelModal(false);
+                    setSelectedRideForCancel(null);
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <XCircle className="w-6 h-6" />
+                </button>
+              </div>
 
-                      <div className="text-sm text-gray-600">
-                        <p className="mb-2">If you cancel after a driver has been assigned, it may affect your rating and future ride availability.</p>
-                        <p>Please only cancel if absolutely necessary.</p>
-                      </div>
-
-                      <div className="flex space-x-3">
-                        <button
-                          onClick={() => {
-                            setShowCancelModal(false);
-                            setSelectedRideForCancel(null);
-                          }}
-                          className="flex-1 bg-gray-200 text-gray-800 py-3 px-4 rounded-lg hover:bg-gray-300 transition-colors font-medium"
-                        >
-                          Keep Ride
-                        </button>
-                        <button
-                          onClick={() => confirmCancelRide("User cancelled via confirmation modal")}
-                          className="flex-1 bg-red-600 text-white py-3 px-4 rounded-lg hover:bg-red-700 transition-colors font-medium"
-                        >
-                          Confirm Cancel
-                        </button>
-                      </div>
+              <div className="space-y-4">
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <div className="flex items-center">
+                    <XCircle className="w-8 h-8 text-red-600 mr-3" />
+                    <div>
+                      <h3 className="font-medium text-red-900 mb-1">Cancel Ride Confirmation</h3>
+                      <p className="text-sm text-red-700">
+                        Are you sure you want to cancel this ride? This action cannot be undone.
+                      </p>
                     </div>
                   </div>
                 </div>
-              </div>
-            )}
 
-            {/* Ride History Modal */}
+                <div className="text-sm text-gray-600">
+                  <p className="mb-2">If you cancel after a driver has been assigned, it may affect your rating and future ride availability.</p>
+                  <p>Please only cancel if absolutely necessary.</p>
+                </div>
+
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => {
+                      setShowCancelModal(false);
+                      setSelectedRideForCancel(null);
+                    }}
+                    className="flex-1 bg-gray-200 text-gray-800 py-3 px-4 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+                  >
+                    Keep Ride
+                  </button>
+                  <button
+                    onClick={() => confirmCancelRide("User cancelled via confirmation modal")}
+                    className="flex-1 bg-red-600 text-white py-3 px-4 rounded-lg hover:bg-red-700 transition-colors font-medium"
+                  >
+                    Confirm Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Ride History Modal */}
             {showHistory && (
               <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
                 <div className="bg-white rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
