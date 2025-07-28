@@ -762,6 +762,16 @@ const RiderDashboard = () => {
     }
   };
 
+  const handlePayNow = (ride) => {
+    setSelectedRideForPayment(ride);
+    setShowPaymentModal(true);
+  };
+
+  const handlePaymentSuccess = () => {
+    fetchCurrentRides();
+    setSelectedRideForPayment(null);
+  };
+
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Header */}
