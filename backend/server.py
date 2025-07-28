@@ -167,6 +167,21 @@ class PaymentStatusResponse(BaseModel):
     currency: str
     ride_info: Optional[Dict[str, Any]] = None
 
+class RazorpayOrderRequest(BaseModel):
+    ride_id: str
+
+class RazorpayOrderResponse(BaseModel):
+    order_id: str
+    amount: int
+    currency: str
+    key_id: str
+    ride_info: Dict[str, Any]
+
+class RazorpayPaymentVerification(BaseModel):
+    razorpay_order_id: str
+    razorpay_payment_id: str
+    razorpay_signature: str
+
 # Utility Functions
 def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
