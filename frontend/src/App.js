@@ -996,15 +996,6 @@ const DriverDashboard = () => {
               {driverProfile && (
                 <>
                   <div className="p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium">Per KM Rate</span>
-                      <span className="text-lg font-bold text-green-600">
-                        ₹{driverProfile.per_km_rate}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="p-3 bg-gray-50 rounded-lg">
                     <div className="space-y-2">
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-600">Vehicle</span>
@@ -1013,6 +1004,10 @@ const DriverDashboard = () => {
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-600">Number</span>
                         <span className="text-sm font-medium">{driverProfile.vehicle_number}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">License</span>
+                        <span className="text-sm font-medium">{driverProfile.license_number}</span>
                       </div>
                     </div>
                   </div>
