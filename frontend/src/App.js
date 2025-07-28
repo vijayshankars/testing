@@ -443,7 +443,89 @@ const LegacyAuthForm = ({ onSwitch }) => {
   );
 };
 
-// Driver Dashboard Component
+// Notification Hook for Driver Alerts
+const useDriverNotifications = (isAvailable, rideRequests) => {
+  const [lastRequestCount, setLastRequestCount] = useState(0);
+  const [notificationPermission, setNotificationPermission] = useState('default');
+  
+  // Request notification permission on mount
+  useEffect(() => {
+    if ('Notification' in window) {
+      if (Notification.permission === 'granted') {
+        setNotificationPermission('granted');
+      } else if (Notification.permission !== 'denied') {
+        Notification.requestPermission().then(permission => {
+          setNotificationPermission(permission);
+        });
+      }
+    }
+  }, []);
+
+  // Play notification sound
+  const playNotificationSound = () => {
+    // Create audio context for notification sound
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    
+    // Create a simple notification tone
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    // Configuration for notification sound
+    oscillator.frequency.setValueAtTime(800, audioContext.currentTime); // High pitch
+    oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1); // Lower pitch
+    oscillator.frequency.setValueAtTime(800, audioContext.currentTime + 0.2); // High pitch again
+    
+    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+    
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.5);
+  };
+
+  // Show browser notification
+  const showBrowserNotification = (requestsCount) => {
+    if (notificationPermission === 'granted') {
+      const notification = new Notification('New Ride Request!', {
+        body: `You have ${requestsCount} new ride request${requestsCount > 1 ? 's' : ''} nearby`,
+        icon: 'https://cdn-icons-png.flaticon.com/512/3448/3448339.png',
+        badge: 'https://cdn-icons-png.flaticon.com/512/3448/3448339.png',
+        tag: 'ride-request',
+        requireInteraction: true
+      });
+
+      // Auto-close notification after 5 seconds
+      setTimeout(() => notification.close(), 5000);
+    }
+  };
+
+  // Monitor ride requests for new notifications
+  useEffect(() => {
+    if (isAvailable && rideRequests.length > lastRequestCount) {
+      const newRequestsCount = rideRequests.length - lastRequestCount;
+      
+      if (lastRequestCount > 0) { // Don't notify on initial load
+        // Play sound notification
+        playNotificationSound();
+        
+        // Show browser notification
+        showBrowserNotification(newRequestsCount);
+        
+        // Visual flash effect (handled in component)
+        const event = new CustomEvent('newRideRequest', { 
+          detail: { count: newRequestsCount } 
+        });
+        window.dispatchEvent(event);
+      }
+    }
+    
+    setLastRequestCount(rideRequests.length);
+  }, [rideRequests.length, isAvailable, lastRequestCount]);
+
+  return { notificationPermission };
+};
 const DriverDashboard = () => {
   const [driverProfile, setDriverProfile] = useState(null);
   const [showProfileForm, setShowProfileForm] = useState(false);
