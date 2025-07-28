@@ -538,7 +538,6 @@ const DriverDashboard = () => {
   const [isAvailable, setIsAvailable] = useState(false);
   const [currentLocation, setCurrentLocation] = useState(null);
   const [profileForm, setProfileForm] = useState({
-    per_km_rate: '',
     vehicle_type: '',
     vehicle_number: '',
     license_number: '',
@@ -548,6 +547,8 @@ const DriverDashboard = () => {
   const [flashEffect, setFlashEffect] = useState(false);
   const [otpInput, setOtpInput] = useState('');
   const [selectedRideForOTP, setSelectedRideForOTP] = useState(null);
+  const [isVerifyingLicense, setIsVerifyingLicense] = useState(false);
+  const [licenseVerificationStatus, setLicenseVerificationStatus] = useState(null);
   
   const { user, logout } = useAuth();
   const { getUserLocation } = useGoogleMaps();
