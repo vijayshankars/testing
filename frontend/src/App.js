@@ -1653,7 +1653,9 @@ const LocationAutocomplete = ({
         input: input,
         componentRestrictions: { country: ['in', 'us', 'gb'] }, // Focus on major countries
         types: ['establishment', 'geocode'], // Include businesses and locations
-        fields: ['place_id', 'name', 'formatted_address', 'geometry']
+        fields: ['place_id', 'name', 'formatted_address', 'geometry'],
+        location: new window.google.maps.LatLng(13.0827, 80.2707), // Bias towards Chennai
+        radius: 50000 // 50km radius around Chennai
       };
 
       service.getPlacePredictions(request, (predictions, status) => {
