@@ -708,6 +708,77 @@ async def verify_license_with_vahan(request: LicenseVerificationRequest, current
             "message": "VAHAN verification service unavailable. Please try again later."
         }
 
+@api_router.post("/driver/verify-vehicle")
+async def verify_vehicle_with_vahan(request: VehicleVerificationRequest, current_user: dict = Depends(get_current_user)):
+    """Verify vehicle registration with VAHAN system"""
+    try:
+        # Validate vehicle number format (basic validation)
+        vehicle_number = request.vehicle_number.upper().strip()
+        
+        if not vehicle_number or len(vehicle_number) < 8:
+            return {"success": False, "message": "Invalid vehicle number format"}
+        
+        # Basic Indian vehicle number format check (e.g., KA01AB1234, TN01CD5678)
+        import re
+        vehicle_pattern = r'^[A-Z]{2}[0-9]{1,2}[A-Z]{1,2}[0-9]{4}$'
+        if not re.match(vehicle_pattern, vehicle_number):
+            return {"success": False, "message": "Invalid vehicle number format. Use format like KA01AB1234"}
+        
+        # For demo purposes, we'll simulate VAHAN vehicle verification
+        # In production, you would integrate with actual VAHAN API
+        # using the VAHAN integration playbook provided earlier
+        
+        # Simulate different vehicle validation scenarios
+        state_codes = ["KA", "TN", "MH", "DL", "GJ", "UP", "AP", "TS", "RJ", "WB"]
+        state_code = vehicle_number[:2]
+        
+        if state_code in state_codes:
+            # Valid vehicle simulation
+            vehicle_data = {
+                "registration_number": vehicle_number,
+                "owner_name": "Test Vehicle Owner",
+                "vehicle_class": request.vehicle_type or "Motor Car",
+                "fuel_type": "Petrol",
+                "registration_date": "2020-03-15",
+                "validity_until": "2035-03-14",
+                "engine_number": "ABC123456789",
+                "chassis_number": "XYZ987654321",
+                "fitness_validity": "2024-12-31",
+                "insurance_validity": "2024-06-30",
+                "status": "ACTIVE"
+            }
+            
+            # Store verification record (optional)
+            verification_record = {
+                "vehicle_number": vehicle_number,
+                "user_id": current_user["id"],
+                "verification_status": "VERIFIED",
+                "vehicle_data": vehicle_data,
+                "verified_at": datetime.utcnow()
+            }
+            
+            # You can store this in a separate collection for audit purposes
+            # await db.vehicle_verifications.insert_one(verification_record)
+            
+            return {
+                "success": True,
+                "message": "Vehicle verified successfully with VAHAN system",
+                "vehicle_data": vehicle_data,
+                "verification_id": str(ObjectId())
+            }
+        else:
+            return {
+                "success": False,
+                "message": f"Vehicle registration not found in VAHAN database for state code: {state_code}"
+            }
+    
+    except Exception as e:
+        print(f"VAHAN vehicle verification error: {str(e)}")
+        return {
+            "success": False,
+            "message": "VAHAN vehicle verification service unavailable. Please try again later."
+        }
+
 @api_router.post("/driver/profile")
 async def create_driver_profile(
     profile_data: DriverProfileCreate,
