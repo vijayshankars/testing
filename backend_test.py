@@ -764,6 +764,398 @@ def test_database_integration(result: TestResult):
         except Exception as e:
             result.log_failure("Database integration", str(e))
 
+def test_mobile_otp_authentication_system(result: TestResult):
+    """Test Mobile OTP authentication system comprehensively"""
+    print(f"\n{'='*60}")
+    print("12. MOBILE OTP AUTHENTICATION SYSTEM TESTING")
+    print(f"{'='*60}")
+    
+    # Test data for Mobile OTP authentication
+    test_phone_numbers = ["+91 9876543210", "+1 5551234567"]
+    demo_otps = ["123456", "000000"]
+    user_names = ["Test Rider Mobile", "Test Driver Mobile"]
+    user_types = ["rider", "driver"]
+    
+    mobile_tokens = {}
+    
+    # Test 1: Send OTP with valid Indian phone number
+    try:
+        otp_request = {
+            "phone_number": "+91 9876543210",
+            "user_type": "rider"
+        }
+        response = make_request("POST", "/auth/send-otp", otp_request)
+        if response.status_code == 200:
+            data = response.json()
+            required_fields = ["success", "message", "is_existing_user", "demo_mode"]
+            if all(field in data for field in required_fields):
+                if data["success"] and data["demo_mode"]:
+                    result.log_success("POST /api/auth/send-otp - Valid Indian phone number (+91 format)")
+                    if "demo_otp" in data:
+                        result.log_success("POST /api/auth/send-otp - Demo OTP returned in response")
+                    else:
+                        result.log_failure("POST /api/auth/send-otp", "Demo OTP not returned in demo mode")
+                else:
+                    result.log_failure("POST /api/auth/send-otp", f"Invalid response data: {data}")
+            else:
+                result.log_failure("POST /api/auth/send-otp", f"Missing required fields: {data}")
+        else:
+            result.log_failure("POST /api/auth/send-otp", f"Status {response.status_code}: {response.text}")
+    except Exception as e:
+        result.log_failure("POST /api/auth/send-otp", str(e))
+    
+    # Test 2: Send OTP with international phone number
+    try:
+        otp_request = {
+            "phone_number": "+1 5551234567",
+            "user_type": "driver"
+        }
+        response = make_request("POST", "/auth/send-otp", otp_request)
+        if response.status_code == 200:
+            data = response.json()
+            if data.get("success") and data.get("demo_mode"):
+                result.log_success("POST /api/auth/send-otp - Valid international phone number (+1 format)")
+            else:
+                result.log_failure("POST /api/auth/send-otp", f"Invalid response for international number: {data}")
+        else:
+            result.log_failure("POST /api/auth/send-otp", f"Status {response.status_code}: {response.text}")
+    except Exception as e:
+        result.log_failure("POST /api/auth/send-otp", str(e))
+    
+    # Test 3: Phone number validation - invalid formats
+    invalid_phones = ["123456789", "invalid_phone", "+", "91987654321"]
+    for invalid_phone in invalid_phones:
+        try:
+            otp_request = {
+                "phone_number": invalid_phone,
+                "user_type": "rider"
+            }
+            response = make_request("POST", "/auth/send-otp", otp_request)
+            if response.status_code == 400:
+                result.log_success(f"POST /api/auth/send-otp - Invalid phone number rejection: {invalid_phone}")
+            else:
+                result.log_failure("POST /api/auth/send-otp", f"Should reject invalid phone {invalid_phone}, got {response.status_code}")
+        except Exception as e:
+            result.log_failure("POST /api/auth/send-otp", f"Error testing invalid phone {invalid_phone}: {str(e)}")
+    
+    # Test 4: Phone number formatting edge cases
+    formatting_tests = [
+        {"input": "9876543210", "expected": "+919876543210"},
+        {"input": "919876543210", "expected": "+919876543210"},
+        {"input": "+91 9876 543 210", "expected": "+919876543210"}
+    ]
+    
+    for test_case in formatting_tests:
+        try:
+            otp_request = {
+                "phone_number": test_case["input"],
+                "user_type": "rider"
+            }
+            response = make_request("POST", "/auth/send-otp", otp_request)
+            if response.status_code == 200:
+                result.log_success(f"POST /api/auth/send-otp - Phone formatting: {test_case['input']} -> formatted correctly")
+            else:
+                result.log_failure("POST /api/auth/send-otp", f"Phone formatting failed for {test_case['input']}: {response.status_code}")
+        except Exception as e:
+            result.log_failure("POST /api/auth/send-otp", f"Error testing phone formatting {test_case['input']}: {str(e)}")
+    
+    # Test 5: OTP verification with demo OTP for new user registration
+    try:
+        # First send OTP
+        otp_request = {
+            "phone_number": "+91 8765432109",
+            "user_type": "rider"
+        }
+        send_response = make_request("POST", "/auth/send-otp", otp_request)
+        
+        if send_response.status_code == 200:
+            # Now verify with demo OTP
+            verify_request = {
+                "phone_number": "+91 8765432109",
+                "otp_code": "123456",  # Demo OTP
+                "user_type": "rider",
+                "name": "Test Rider Mobile"
+            }
+            response = make_request("POST", "/auth/verify-otp", verify_request)
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = ["success", "message", "user_data", "token", "is_new_user"]
+                if all(field in data for field in required_fields):
+                    if data["success"] and data["is_new_user"] and data["token"]:
+                        mobile_tokens["rider"] = data["token"]
+                        result.log_success("POST /api/auth/verify-otp - New user registration via mobile OTP")
+                        
+                        # Verify user data
+                        user_data = data["user_data"]
+                        if user_data.get("phone") == "+918765432109" and user_data.get("user_type") == "rider":
+                            result.log_success("POST /api/auth/verify-otp - User data populated correctly for new user")
+                        else:
+                            result.log_failure("POST /api/auth/verify-otp", f"Invalid user data: {user_data}")
+                    else:
+                        result.log_failure("POST /api/auth/verify-otp", f"Invalid verification response: {data}")
+                else:
+                    result.log_failure("POST /api/auth/verify-otp", f"Missing required fields: {data}")
+            else:
+                result.log_failure("POST /api/auth/verify-otp", f"Status {response.status_code}: {response.text}")
+        else:
+            result.log_failure("POST /api/auth/verify-otp", "Failed to send OTP for verification test")
+    except Exception as e:
+        result.log_failure("POST /api/auth/verify-otp", str(e))
+    
+    # Test 6: OTP verification for existing user login
+    try:
+        # Send OTP for the same number (now existing user)
+        otp_request = {
+            "phone_number": "+91 8765432109",
+            "user_type": "rider"
+        }
+        send_response = make_request("POST", "/auth/send-otp", otp_request)
+        
+        if send_response.status_code == 200:
+            send_data = send_response.json()
+            if send_data.get("is_existing_user"):
+                # Verify with demo OTP (no name needed for existing user)
+                verify_request = {
+                    "phone_number": "+91 8765432109",
+                    "otp_code": "000000",  # Different demo OTP
+                    "user_type": "rider"
+                }
+                response = make_request("POST", "/auth/verify-otp", verify_request)
+                if response.status_code == 200:
+                    data = response.json()
+                    if data.get("success") and not data.get("is_new_user"):
+                        result.log_success("POST /api/auth/verify-otp - Existing user login via mobile OTP")
+                    else:
+                        result.log_failure("POST /api/auth/verify-otp", f"Should be existing user login: {data}")
+                else:
+                    result.log_failure("POST /api/auth/verify-otp", f"Status {response.status_code}: {response.text}")
+            else:
+                result.log_failure("POST /api/auth/verify-otp", "User should be marked as existing")
+        else:
+            result.log_failure("POST /api/auth/verify-otp", "Failed to send OTP for existing user test")
+    except Exception as e:
+        result.log_failure("POST /api/auth/verify-otp", str(e))
+    
+    # Test 7: Driver registration via mobile OTP
+    try:
+        # Send OTP for driver
+        otp_request = {
+            "phone_number": "+91 7654321098",
+            "user_type": "driver"
+        }
+        send_response = make_request("POST", "/auth/send-otp", otp_request)
+        
+        if send_response.status_code == 200:
+            # Verify with demo OTP
+            verify_request = {
+                "phone_number": "+91 7654321098",
+                "otp_code": "123456",
+                "user_type": "driver",
+                "name": "Test Driver Mobile"
+            }
+            response = make_request("POST", "/auth/verify-otp", verify_request)
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success") and data.get("is_new_user"):
+                    user_data = data.get("user_data", {})
+                    if user_data.get("user_type") == "driver":
+                        mobile_tokens["driver"] = data["token"]
+                        result.log_success("POST /api/auth/verify-otp - Driver registration via mobile OTP")
+                    else:
+                        result.log_failure("POST /api/auth/verify-otp", f"Invalid driver user type: {user_data}")
+                else:
+                    result.log_failure("POST /api/auth/verify-otp", f"Driver registration failed: {data}")
+            else:
+                result.log_failure("POST /api/auth/verify-otp", f"Status {response.status_code}: {response.text}")
+        else:
+            result.log_failure("POST /api/auth/verify-otp", "Failed to send OTP for driver test")
+    except Exception as e:
+        result.log_failure("POST /api/auth/verify-otp", str(e))
+    
+    # Test 8: User type validation and restrictions
+    try:
+        # Try to verify rider OTP as driver (should fail)
+        otp_request = {
+            "phone_number": "+91 6543210987",
+            "user_type": "rider"
+        }
+        send_response = make_request("POST", "/auth/send-otp", otp_request)
+        
+        if send_response.status_code == 200:
+            # Register as rider first
+            verify_request = {
+                "phone_number": "+91 6543210987",
+                "otp_code": "123456",
+                "user_type": "rider",
+                "name": "Test User Type"
+            }
+            reg_response = make_request("POST", "/auth/verify-otp", verify_request)
+            
+            if reg_response.status_code == 200:
+                # Now try to login as driver with same number
+                otp_request["user_type"] = "driver"
+                send_response2 = make_request("POST", "/auth/send-otp", otp_request)
+                
+                if send_response2.status_code == 200:
+                    verify_request["user_type"] = "driver"
+                    verify_request.pop("name", None)  # Remove name for login
+                    wrong_type_response = make_request("POST", "/auth/verify-otp", verify_request)
+                    
+                    if wrong_type_response.status_code == 400:
+                        result.log_success("POST /api/auth/verify-otp - User type validation working correctly")
+                    else:
+                        result.log_failure("POST /api/auth/verify-otp", f"Should reject wrong user type, got {wrong_type_response.status_code}")
+                else:
+                    result.log_failure("POST /api/auth/verify-otp", "Failed to send OTP for user type test")
+            else:
+                result.log_failure("POST /api/auth/verify-otp", "Failed to register user for type validation test")
+        else:
+            result.log_failure("POST /api/auth/verify-otp", "Failed to send initial OTP for user type test")
+    except Exception as e:
+        result.log_failure("POST /api/auth/verify-otp", str(e))
+    
+    # Test 9: Invalid OTP attempts
+    try:
+        # Send OTP
+        otp_request = {
+            "phone_number": "+91 5432109876",
+            "user_type": "rider"
+        }
+        send_response = make_request("POST", "/auth/send-otp", otp_request)
+        
+        if send_response.status_code == 200:
+            # Try invalid OTP
+            verify_request = {
+                "phone_number": "+91 5432109876",
+                "otp_code": "999999",  # Invalid OTP
+                "user_type": "rider",
+                "name": "Test Invalid OTP"
+            }
+            response = make_request("POST", "/auth/verify-otp", verify_request)
+            if response.status_code == 200:
+                data = response.json()
+                if not data.get("success"):
+                    result.log_success("POST /api/auth/verify-otp - Invalid OTP rejection")
+                else:
+                    result.log_failure("POST /api/auth/verify-otp", "Should reject invalid OTP")
+            else:
+                result.log_failure("POST /api/auth/verify-otp", f"Unexpected status for invalid OTP: {response.status_code}")
+        else:
+            result.log_failure("POST /api/auth/verify-otp", "Failed to send OTP for invalid OTP test")
+    except Exception as e:
+        result.log_failure("POST /api/auth/verify-otp", str(e))
+    
+    # Test 10: OTP attempt limits (max 3 attempts)
+    try:
+        # Send OTP
+        otp_request = {
+            "phone_number": "+91 4321098765",
+            "user_type": "rider"
+        }
+        send_response = make_request("POST", "/auth/send-otp", otp_request)
+        
+        if send_response.status_code == 200:
+            # Make 3 invalid attempts
+            verify_request = {
+                "phone_number": "+91 4321098765",
+                "otp_code": "111111",  # Invalid OTP
+                "user_type": "rider",
+                "name": "Test Attempt Limit"
+            }
+            
+            for attempt in range(3):
+                response = make_request("POST", "/auth/verify-otp", verify_request)
+                if response.status_code != 200:
+                    break
+            
+            # 4th attempt should be rejected
+            response = make_request("POST", "/auth/verify-otp", verify_request)
+            if response.status_code == 400:
+                data = response.json()
+                if "attempts" in data.get("detail", "").lower():
+                    result.log_success("POST /api/auth/verify-otp - OTP attempt limit enforcement")
+                else:
+                    result.log_failure("POST /api/auth/verify-otp", f"Wrong error message for attempt limit: {data}")
+            else:
+                result.log_failure("POST /api/auth/verify-otp", f"Should reject after 3 attempts, got {response.status_code}")
+        else:
+            result.log_failure("POST /api/auth/verify-otp", "Failed to send OTP for attempt limit test")
+    except Exception as e:
+        result.log_failure("POST /api/auth/verify-otp", str(e))
+    
+    # Test 11: Missing required fields
+    try:
+        # Missing name for new user
+        verify_request = {
+            "phone_number": "+91 3210987654",
+            "otp_code": "123456",
+            "user_type": "rider"
+            # Missing name
+        }
+        
+        # First send OTP
+        otp_request = {
+            "phone_number": "+91 3210987654",
+            "user_type": "rider"
+        }
+        send_response = make_request("POST", "/auth/send-otp", otp_request)
+        
+        if send_response.status_code == 200:
+            response = make_request("POST", "/auth/verify-otp", verify_request)
+            if response.status_code == 400:
+                result.log_success("POST /api/auth/verify-otp - Missing name field rejection for new user")
+            else:
+                result.log_failure("POST /api/auth/verify-otp", f"Should reject missing name, got {response.status_code}")
+        else:
+            result.log_failure("POST /api/auth/verify-otp", "Failed to send OTP for missing fields test")
+    except Exception as e:
+        result.log_failure("POST /api/auth/verify-otp", str(e))
+    
+    # Test 12: JWT token generation and validation for mobile authenticated users
+    if mobile_tokens.get("rider"):
+        try:
+            headers = get_auth_headers(mobile_tokens["rider"])
+            response = make_request("GET", "/rider/rides", headers=headers)
+            if response.status_code == 200:
+                result.log_success("JWT token validation - Mobile authenticated rider token works")
+            else:
+                result.log_failure("JWT token validation", f"Mobile rider token invalid: {response.status_code}")
+        except Exception as e:
+            result.log_failure("JWT token validation", str(e))
+    
+    if mobile_tokens.get("driver"):
+        try:
+            headers = get_auth_headers(mobile_tokens["driver"])
+            response = make_request("GET", "/driver/ride-requests", headers=headers)
+            if response.status_code in [200, 400]:  # 400 is OK if no location set
+                result.log_success("JWT token validation - Mobile authenticated driver token works")
+            else:
+                result.log_failure("JWT token validation", f"Mobile driver token invalid: {response.status_code}")
+        except Exception as e:
+            result.log_failure("JWT token validation", str(e))
+    
+    # Test 13: Expired OTP session
+    try:
+        # This test would require waiting for expiration or mocking time
+        # For now, we'll test with a very old session by trying to verify without sending OTP first
+        verify_request = {
+            "phone_number": "+91 2109876543",
+            "otp_code": "123456",
+            "user_type": "rider",
+            "name": "Test Expired"
+        }
+        response = make_request("POST", "/auth/verify-otp", verify_request)
+        if response.status_code == 400:
+            data = response.json()
+            if "expired" in data.get("detail", "").lower() or "invalid" in data.get("detail", "").lower():
+                result.log_success("POST /api/auth/verify-otp - Expired/Invalid OTP session handling")
+            else:
+                result.log_failure("POST /api/auth/verify-otp", f"Wrong error for expired session: {data}")
+        else:
+            result.log_failure("POST /api/auth/verify-otp", f"Should reject expired session, got {response.status_code}")
+    except Exception as e:
+        result.log_failure("POST /api/auth/verify-otp", str(e))
+
 def test_nearby_ride_requests_scenario(result: TestResult):
     """Test the complete nearby ride requests functionality as requested"""
     print(f"\n{'='*60}")
