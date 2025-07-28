@@ -213,8 +213,60 @@ const useGoogleMaps = () => {
   };
 };
 
-// Login/Register Component
+// Login/Register Component with Mobile OTP
 const AuthPage = () => {
+  const [authMode, setAuthMode] = useState('mobile'); // 'mobile' or 'legacy'
+  const { login } = useAuth();
+  const navigate = useNavigate();
+
+  const handleMobileAuthSuccess = (userData, token) => {
+    login(userData, token);
+    
+    if (userData.user_type === 'driver') {
+      navigate('/driver-dashboard');
+    } else {
+      navigate('/rider-dashboard');
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
+            <Car className="w-8 h-8 text-blue-600" />
+          </div>
+          <h1 className="text-3xl font-bold text-gray-900">RideShare</h1>
+          <p className="text-gray-600 mt-2">
+            Quick & secure mobile authentication
+          </p>
+        </div>
+
+        {authMode === 'mobile' ? (
+          <div>
+            <MobileOTPAuth onSuccess={handleMobileAuthSuccess} />
+            
+            {/* Switch to legacy auth */}
+            <div className="mt-6 text-center">
+              <button
+                type="button"
+                className="text-sm text-gray-500 hover:text-gray-700"
+                onClick={() => setAuthMode('legacy')}
+              >
+                Use email & password instead
+              </button>
+            </div>
+          </div>
+        ) : (
+          <LegacyAuthForm onSwitch={() => setAuthMode('mobile')} />
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Legacy Email/Password Authentication (kept for backward compatibility)
+const LegacyAuthForm = ({ onSwitch }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
     email: '',
@@ -258,132 +310,132 @@ const AuthPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
-            <Car className="w-8 h-8 text-blue-600" />
+    <div>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
+            {error}
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">RideShare</h1>
-          <p className="text-gray-600 mt-2">
-            {isLogin ? 'Welcome back!' : 'Join us today!'}
-          </p>
+        )}
+
+        {!isLogin && (
+          <>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
+              <input
+                type="text"
+                required
+                className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+              <input
+                type="tel"
+                required
+                className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">I am a</label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  className={`p-3 rounded-lg border-2 transition-all ${
+                    formData.user_type === 'rider'
+                      ? 'border-blue-500 bg-blue-50 text-blue-600'
+                      : 'border-gray-300 text-gray-600 hover:border-gray-400'
+                  }`}
+                  onClick={() => setFormData({ ...formData, user_type: 'rider' })}
+                >
+                  <Users className="w-5 h-5 mx-auto mb-1" />
+                  Rider
+                </button>
+                <button
+                  type="button"
+                  className={`p-3 rounded-lg border-2 transition-all ${
+                    formData.user_type === 'driver'
+                      ? 'border-blue-500 bg-blue-50 text-blue-600'
+                      : 'border-gray-300 text-gray-600 hover:border-gray-400'
+                  }`}
+                  onClick={() => setFormData({ ...formData, user_type: 'driver' })}
+                >
+                  <Car className="w-5 h-5 mx-auto mb-1" />
+                  Driver
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+          <input
+            type="email"
+            required
+            className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            value={formData.email}
+            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+          />
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg">
-              {error}
-            </div>
-          )}
-
-          {!isLogin && (
-            <>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
-                <input
-                  type="text"
-                  required
-                  className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
-                <input
-                  type="tel"
-                  required
-                  className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">I am a</label>
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    className={`p-3 rounded-lg border-2 transition-all ${
-                      formData.user_type === 'rider'
-                        ? 'border-blue-500 bg-blue-50 text-blue-600'
-                        : 'border-gray-300 text-gray-600 hover:border-gray-400'
-                    }`}
-                    onClick={() => setFormData({ ...formData, user_type: 'rider' })}
-                  >
-                    <Users className="w-5 h-5 mx-auto mb-1" />
-                    Rider
-                  </button>
-                  <button
-                    type="button"
-                    className={`p-3 rounded-lg border-2 transition-all ${
-                      formData.user_type === 'driver'
-                        ? 'border-blue-500 bg-blue-50 text-blue-600'
-                        : 'border-gray-300 text-gray-600 hover:border-gray-400'
-                    }`}
-                    onClick={() => setFormData({ ...formData, user_type: 'driver' })}
-                  >
-                    <Car className="w-5 h-5 mx-auto mb-1" />
-                    Driver
-                  </button>
-                </div>
-              </div>
-            </>
-          )}
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+          <div className="relative">
             <input
-              type="email"
+              type={showPassword ? 'text' : 'password'}
               required
-              className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              className="w-full px-3 py-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              value={formData.password}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
             />
+            <button
+              type="button"
+              className="absolute inset-y-0 right-0 pr-3 flex items-center"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? (
+                <EyeOff className="w-5 h-5 text-gray-400" />
+              ) : (
+                <Eye className="w-5 h-5 text-gray-400" />
+              )}
+            </button>
           </div>
+        </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
-            <div className="relative">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                required
-                className="w-full px-3 py-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              />
-              <button
-                type="button"
-                className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                onClick={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? (
-                  <EyeOff className="w-5 h-5 text-gray-400" />
-                ) : (
-                  <Eye className="w-5 h-5 text-gray-400" />
-                )}
-              </button>
-            </div>
-          </div>
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {loading ? 'Processing...' : (isLogin ? 'Sign In' : 'Sign Up')}
+        </button>
+      </form>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? 'Processing...' : (isLogin ? 'Sign In' : 'Sign Up')}
-          </button>
-        </form>
-
-        <div className="mt-6 text-center">
+      <div className="mt-6 space-y-3">
+        <div className="text-center">
           <button
             type="button"
             className="text-blue-600 hover:text-blue-500"
             onClick={() => setIsLogin(!isLogin)}
           >
             {isLogin ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
+          </button>
+        </div>
+        
+        <div className="text-center">
+          <button
+            type="button"
+            className="text-sm text-gray-500 hover:text-gray-700"
+            onClick={onSwitch}
+          >
+            Use mobile number instead
           </button>
         </div>
       </div>
