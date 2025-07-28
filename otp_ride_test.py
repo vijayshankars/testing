@@ -248,7 +248,7 @@ def test_ride_request_and_otp_generation(result: TestResult):
         }
         
         headers = get_auth_headers(rider_token)
-        response = make_request("POST", "/rider/request-ride", ride_data, headers)
+        response = make_request("POST", "/rider/rides", ride_data, headers)
         
         if response.status_code == 200:
             data = response.json()
