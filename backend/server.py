@@ -454,6 +454,246 @@ async def get_available_drivers(
     
     return nearby_drivers
 
+# Payment Routes - Razorpay UPI Integration
+@api_router.post("/payment/razorpay/create-order", response_model=RazorpayOrderResponse)
+async def create_razorpay_order(
+    order_request: RazorpayOrderRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    if not razorpay_client:
+        raise HTTPException(status_code=500, detail="Razorpay not configured")
+    
+    # Get ride details
+    ride = await db.ride_requests.find_one({"id": order_request.ride_id}, {"_id": 0})
+    if not ride:
+        raise HTTPException(status_code=404, detail="Ride not found")
+    
+    # Verify user is the rider for this ride
+    if ride["rider_id"] != current_user["id"]:
+        raise HTTPException(status_code=403, detail="Unauthorized to pay for this ride")
+    
+    # Check if ride is accepted (has driver)
+    if not ride.get("driver_id") or ride.get("status") != "accepted":
+        raise HTTPException(status_code=400, detail="Ride must be accepted by driver before payment")
+    
+    # Convert fare to paise (multiply by 100)
+    amount_paise = int(ride["estimated_fare"] * 100)
+    
+    # Create Razorpay order
+    try:
+        razorpay_order = razorpay_client.order.create({
+            "amount": amount_paise,
+            "currency": "INR",
+            "payment_capture": 1,
+            "notes": {
+                "ride_id": ride["id"],
+                "rider_id": current_user["id"],
+                "driver_id": ride["driver_id"]
+            }
+        })
+        
+        # Create payment transaction record
+        payment_transaction = PaymentTransaction(
+            ride_id=ride["id"],
+            rider_id=current_user["id"],
+            driver_id=ride["driver_id"],
+            amount=ride["estimated_fare"],
+            currency="INR",
+            session_id=razorpay_order["id"],
+            payment_status="pending",
+            status="initiated",
+            metadata={
+                "payment_method": "razorpay_upi",
+                "razorpay_order_id": razorpay_order["id"]
+            }
+        )
+        
+        await db.payment_transactions.insert_one(payment_transaction.dict())
+        
+        # Get driver info for payment
+        driver_user = await db.users.find_one({"id": ride["driver_id"]}, {"_id": 0})
+        
+        return RazorpayOrderResponse(
+            order_id=razorpay_order["id"],
+            amount=amount_paise,
+            currency="INR",
+            key_id=razorpay_key_id,
+            ride_info={
+                "ride_id": ride["id"],
+                "pickup": ride["pickup_location"]["address"],
+                "drop": ride["drop_location"]["address"],
+                "fare": ride["estimated_fare"],
+                "driver_name": driver_user["name"] if driver_user else "Unknown",
+                "distance": ride["estimated_distance"]
+            }
+        )
+        
+    except Exception as e:
+        logger.error(f"Error creating Razorpay order: {e}")
+        raise HTTPException(status_code=500, detail="Failed to create payment order")
+
+@api_router.post("/payment/razorpay/verify")
+async def verify_razorpay_payment(
+    verification: RazorpayPaymentVerification,
+    current_user: dict = Depends(get_current_user)
+):
+    if not razorpay_client:
+        raise HTTPException(status_code=500, detail="Razorpay not configured")
+    
+    # Verify payment signature
+    try:
+        params_dict = {
+            'razorpay_order_id': verification.razorpay_order_id,
+            'razorpay_payment_id': verification.razorpay_payment_id,
+            'razorpay_signature': verification.razorpay_signature
+        }
+        
+        razorpay_client.utility.verify_payment_signature(params_dict)
+        
+        # Update payment transaction
+        payment_update = await db.payment_transactions.update_one(
+            {"session_id": verification.razorpay_order_id, "rider_id": current_user["id"]},
+            {
+                "$set": {
+                    "payment_id": verification.razorpay_payment_id,
+                    "payment_status": "paid",
+                    "status": "completed",
+                    "updated_at": datetime.utcnow(),
+                    "metadata.razorpay_payment_id": verification.razorpay_payment_id,
+                    "metadata.signature_verified": True
+                }
+            }
+        )
+        
+        if payment_update.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Payment transaction not found")
+        
+        # Update ride status to in_progress
+        await db.ride_requests.update_one(
+            {"id": (await db.payment_transactions.find_one({"session_id": verification.razorpay_order_id}))["ride_id"]},
+            {"$set": {"status": "in_progress", "payment_status": "paid"}}
+        )
+        
+        return {"status": "success", "message": "Payment verified successfully"}
+        
+    except razorpay.errors.SignatureVerificationError:
+        # Update payment as failed
+        await db.payment_transactions.update_one(
+            {"session_id": verification.razorpay_order_id, "rider_id": current_user["id"]},
+            {
+                "$set": {
+                    "payment_status": "failed",
+                    "status": "failed",
+                    "updated_at": datetime.utcnow(),
+                    "metadata.signature_verified": False
+                }
+            }
+        )
+        raise HTTPException(status_code=400, detail="Invalid payment signature")
+    except Exception as e:
+        logger.error(f"Error verifying payment: {e}")
+        raise HTTPException(status_code=500, detail="Payment verification failed")
+
+@api_router.get("/payment/status/{ride_id}")
+async def get_payment_status(
+    ride_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    # Get payment transaction
+    payment = await db.payment_transactions.find_one(
+        {"ride_id": ride_id, "rider_id": current_user["id"]}, 
+        {"_id": 0}
+    )
+    
+    if not payment:
+        raise HTTPException(status_code=404, detail="Payment not found")
+    
+    # Get ride info
+    ride = await db.ride_requests.find_one({"id": ride_id}, {"_id": 0})
+    
+    return PaymentStatusResponse(
+        payment_id=payment.get("payment_id", payment["id"]),
+        status=payment["status"],
+        payment_status=payment["payment_status"],
+        amount=payment["amount"],
+        currency=payment["currency"],
+        ride_info={
+            "pickup": ride["pickup_location"]["address"] if ride else "Unknown",
+            "drop": ride["drop_location"]["address"] if ride else "Unknown",
+            "ride_status": ride["status"] if ride else "Unknown"
+        }
+    )
+
+@api_router.post("/webhook/razorpay")
+async def razorpay_webhook(request: Request):
+    """Handle Razorpay webhook events"""
+    if not razorpay_webhook_secret:
+        raise HTTPException(status_code=500, detail="Webhook secret not configured")
+    
+    try:
+        # Get webhook payload and signature
+        payload = await request.body()
+        signature = request.headers.get('X-Razorpay-Signature', '')
+        
+        # Verify webhook signature
+        expected_signature = hmac.new(
+            razorpay_webhook_secret.encode(),
+            payload,
+            hashlib.sha256
+        ).hexdigest()
+        
+        if not hmac.compare_digest(signature, expected_signature):
+            raise HTTPException(status_code=400, detail="Invalid webhook signature")
+        
+        # Process webhook event
+        import json
+        webhook_data = json.loads(payload.decode())
+        
+        event = webhook_data.get('event')
+        payment_data = webhook_data.get('payload', {}).get('payment', {})
+        
+        if event == 'payment.captured':
+            # Update payment status
+            order_id = payment_data.get('order_id')
+            payment_id = payment_data.get('id')
+            
+            if order_id:
+                await db.payment_transactions.update_one(
+                    {"session_id": order_id},
+                    {
+                        "$set": {
+                            "payment_id": payment_id,
+                            "payment_status": "paid",
+                            "status": "completed",
+                            "updated_at": datetime.utcnow(),
+                            "metadata.webhook_processed": True
+                        }
+                    }
+                )
+        
+        elif event == 'payment.failed':
+            # Update payment as failed
+            order_id = payment_data.get('order_id')
+            
+            if order_id:
+                await db.payment_transactions.update_one(
+                    {"session_id": order_id},
+                    {
+                        "$set": {
+                            "payment_status": "failed",
+                            "status": "failed",
+                            "updated_at": datetime.utcnow(),
+                            "metadata.webhook_processed": True
+                        }
+                    }
+                )
+        
+        return {"status": "processed"}
+        
+    except Exception as e:
+        logger.error(f"Webhook processing error: {e}")
+        raise HTTPException(status_code=500, detail="Webhook processing failed")
+
 # General Routes
 @api_router.get("/")
 async def root():
@@ -462,6 +702,14 @@ async def root():
 @api_router.get("/maps-config")
 async def get_maps_config():
     return {"google_maps_api_key": os.environ.get('GOOGLE_MAPS_API_KEY')}
+
+@api_router.get("/payment-config")
+async def get_payment_config():
+    return {
+        "razorpay_key_id": razorpay_key_id if razorpay_key_id else None,
+        "stripe_enabled": bool(stripe_api_key),
+        "razorpay_enabled": bool(razorpay_key_id and razorpay_key_secret)
+    }
 
 # Include the router in the main app
 app.include_router(api_router)
