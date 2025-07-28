@@ -696,9 +696,12 @@ const RiderDashboard = () => {
   const [mapElement, setMapElement] = useState(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedRideForPayment, setSelectedRideForPayment] = useState(null);
+  const [mapInstance, setMapInstance] = useState(null);
+  const [pickupMarker, setPickupMarker] = useState(null);
+  const [dropMarker, setDropMarker] = useState(null);
   
   const { user, logout } = useAuth();
-  const { loaded, initMap, calculateRoute, getUserLocation } = useGoogleMaps();
+  const { loaded, initMap, calculateRoute, getUserLocation, searchPlaces } = useGoogleMaps();
 
   useEffect(() => {
     getCurrentLocation();
