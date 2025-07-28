@@ -705,7 +705,7 @@ async def get_ride_requests_for_driver(current_user: dict = Depends(get_current_
     if not driver_profile or not driver_profile.get("current_location"):
         raise HTTPException(status_code=400, detail="Driver location not set")
     
-    # Find nearby ride requests within 10km radius
+    # Find nearby ride requests within 25km radius
     ride_requests = await db.ride_requests.find({"status": "requested"}, {"_id": 0}).to_list(100)
     nearby_requests = []
     
@@ -714,7 +714,7 @@ async def get_ride_requests_for_driver(current_user: dict = Depends(get_current_
             driver_profile["current_location"],
             request["pickup_location"]
         )
-        if distance <= 10:  # Within 10km
+        if distance <= 25:  # Increased to 25km for better coverage
             request["distance_to_pickup"] = round(distance, 2)
             nearby_requests.append(request)
     
