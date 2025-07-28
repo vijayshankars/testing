@@ -796,7 +796,7 @@ async def get_available_drivers(
     if current_user["user_type"] != "rider":
         raise HTTPException(status_code=403, detail="Only riders can view available drivers")
     
-    # Find available drivers within 10km radius
+    # Find available drivers within 25km radius
     drivers = await db.driver_profiles.find({
         "is_available": True,
         "current_location": {"$exists": True, "$ne": None}
@@ -808,7 +808,7 @@ async def get_available_drivers(
     for driver in drivers:
         if driver.get("current_location"):
             distance = calculate_distance(rider_location, driver["current_location"])
-            if distance <= 10:  # Within 10km
+            if distance <= 25:  # Increased to 25km for better coverage
                 driver_user = await db.users.find_one({"id": driver["user_id"]}, {"_id": 0})
                 if driver_user:
                     nearby_drivers.append({
