@@ -96,7 +96,7 @@ def test_ride_otp_generation_flow(result: TestResult):
         }
         response = make_request("POST", "/auth/send-otp", otp_request)
         if response.status_code == 200:
-            result.log_success("Step 1a - OTP sent to rider phone +91 9876543210")
+            result.log_success(f"Step 1a - OTP sent to rider phone {rider_phone}")
             
             # Verify OTP and register rider
             verify_request = {
