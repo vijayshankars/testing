@@ -748,56 +748,79 @@ const RiderDashboard = () => {
     if (locationType === 'pickup') {
       setPickupLocation(address);
       
-      // Add pickup marker
-      if (mapInstance && window.google) {
-        if (pickupMarker) {
-          pickupMarker.setMap(null);
-        }
-        
+      // Clear previous pickup marker
+      if (pickupMarker) {
+        pickupMarker.setMap(null);
+        setPickupMarker(null);
+      }
+      
+      // Search and add pickup marker
+      if (mapInstance && window.google && address.trim()) {
         searchPlaces(address, (results) => {
           if (results.length > 0) {
             const place = results[0];
             const marker = new window.google.maps.Marker({
               position: place.geometry.location,
               map: mapInstance,
-              title: 'Pickup Location',
+              title: `Pickup: ${address}`,
               icon: {
                 url: 'https://maps.google.com/mapfiles/ms/icons/green-dot.png'
               }
             });
             setPickupMarker(marker);
+            
+            // Center map on pickup location
             mapInstance.panTo(place.geometry.location);
+            
+            // If drop marker exists, fit both locations
+            if (dropMarker) {
+              const bounds = new window.google.maps.LatLngBounds();
+              bounds.extend(marker.getPosition());
+              bounds.extend(dropMarker.getPosition());
+              mapInstance.fitBounds(bounds);
+              
+              // Auto-calculate fare when both locations are set
+              setTimeout(() => calculateFare(), 1000);
+            }
           }
         });
       }
     } else if (locationType === 'drop') {
       setDropLocation(address);
       
-      // Add drop marker
-      if (mapInstance && window.google) {
-        if (dropMarker) {
-          dropMarker.setMap(null);
-        }
-        
+      // Clear previous drop marker
+      if (dropMarker) {
+        dropMarker.setMap(null);
+        setDropMarker(null);
+      }
+      
+      // Search and add drop marker
+      if (mapInstance && window.google && address.trim()) {
         searchPlaces(address, (results) => {
           if (results.length > 0) {
             const place = results[0];
             const marker = new window.google.maps.Marker({
               position: place.geometry.location,
               map: mapInstance,
-              title: 'Drop Location',
+              title: `Drop: ${address}`,
               icon: {
                 url: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png'
               }
             });
             setDropMarker(marker);
             
-            // If both markers exist, fit bounds
+            // If pickup marker exists, fit both locations
             if (pickupMarker) {
               const bounds = new window.google.maps.LatLngBounds();
               bounds.extend(pickupMarker.getPosition());
               bounds.extend(marker.getPosition());
               mapInstance.fitBounds(bounds);
+              
+              // Auto-calculate fare when both locations are set
+              setTimeout(() => calculateFare(), 1000);
+            } else {
+              // Just center on drop location
+              mapInstance.panTo(place.geometry.location);
             }
           }
         });
