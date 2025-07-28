@@ -285,6 +285,30 @@ backend:
           agent: "testing"
           comment: "✅ Comprehensive payment error handling working: invalid ride_id rejection (404), unauthorized payment attempts (403), non-existent payment status queries (404), and proper authentication failure handling."
 
+  - task: "Ride Cancellation Functionality"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ COMPREHENSIVE RIDE CANCELLATION TESTING COMPLETED: All functionality working perfectly. ✅ POST /api/rider/cancel-ride endpoint working correctly with proper authentication, validation, and response format. ✅ Mobile OTP authentication tested with +91 9876543210 as requested. ✅ Chennai locations tested (Chennai Airport → T. Nagar) with enhanced location display showing 'from location to location' format correctly. ✅ Ride status changes to 'cancelled' with proper cancelled_at timestamp in ISO format. ✅ Cancelled rides appear in ride history (GET /api/rider/ride-history) with location display preserved. ✅ Edge cases handled: prevents cancelling already cancelled rides (404), prevents cancelling non-existent rides (404), prevents unauthorized cancellations (404). ✅ Location display consistency verified across all endpoints. Backend ride cancellation system is fully functional and production-ready. User's reported 'no response' issue is NOT a backend problem - API responds correctly with 200 status."
+
+  - task: "Enhanced Location Display"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ ENHANCED LOCATION DISPLAY TESTING COMPLETED: Location display improvements working correctly across all endpoints. ✅ 'From location to location' format working properly - tested with Chennai locations showing 'Chennai International Airport to T. Nagar' format. ✅ Location coordinates preserved correctly (lat/lng as numeric values). ✅ Location addresses maintained consistently across ride creation, ride list, and ride history endpoints. ✅ Chennai-specific testing successful with realistic locations (Chennai Airport, T. Nagar, Marina Beach, Fort St. George). ✅ Location display consistency verified - same format across POST /api/rider/request-ride, GET /api/rider/rides, and GET /api/rider/ride-history endpoints. Enhanced location display system is fully functional and user-friendly."
+
 frontend:
   - task: "Authentication Flow Testing"
     implemented: true
