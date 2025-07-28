@@ -1381,10 +1381,23 @@ const RiderDashboard = () => {
     driverMarkers.forEach(marker => marker.setMap(null));
     setDriverMarkers([]);
 
-    // Add new driver markers
+    // Add new driver markers with vehicle-specific icons
     const newMarkers = [];
     drivers.forEach(driver => {
       if (driver.current_location && driver.current_location.lat && driver.current_location.lng) {
+        // Get vehicle-specific icon
+        const getVehicleIcon = (vehicleType) => {
+          const iconMap = {
+            'hatchback': 'https://maps.google.com/mapfiles/ms/icons/cabs.png',
+            'sedan': 'https://maps.google.com/mapfiles/ms/icons/truck.png', 
+            'suv': 'https://maps.google.com/mapfiles/ms/icons/bus.png',
+            'auto': 'https://maps.google.com/mapfiles/ms/icons/yellow-dot.png',
+            'bike': 'https://maps.google.com/mapfiles/ms/icons/motorcycling.png',
+            'default': 'https://maps.google.com/mapfiles/ms/icons/cabs.png'
+          };
+          return iconMap[vehicleType?.toLowerCase()] || iconMap['default'];
+        };
+
         const marker = new window.google.maps.Marker({
           position: {
             lat: driver.current_location.lat,
@@ -1393,21 +1406,31 @@ const RiderDashboard = () => {
           map: mapInstance,
           title: `${driver.name} - ${driver.vehicle_type} (₹${driver.per_km_rate}/km)`,
           icon: {
-            url: 'https://maps.google.com/mapfiles/ms/icons/cabs.png', // Car icon
+            url: getVehicleIcon(driver.vehicle_type),
             scaledSize: new window.google.maps.Size(32, 32)
           }
         });
 
-        // Add info window for driver details
+        // Enhanced info window with vehicle details
         const infoWindow = new window.google.maps.InfoWindow({
           content: `
-            <div style="padding: 8px;">
-              <h4 style="margin: 0 0 4px 0; color: #1f2937;">${driver.name}</h4>
-              <p style="margin: 2px 0; color: #6b7280; font-size: 14px;">
-                🚗 ${driver.vehicle_type}<br>
-                💰 ₹${driver.per_km_rate}/km<br>
-                📍 ${driver.distance}km away
-              </p>
+            <div style="padding: 12px; min-width: 200px;">
+              <h4 style="margin: 0 0 8px 0; color: #1f2937; font-size: 16px;">${driver.name}</h4>
+              <div style="display: flex; align-items: center; margin-bottom: 4px;">
+                <span style="font-size: 18px; margin-right: 8px;">🚗</span>
+                <span style="color: #6b7280; font-size: 14px;">${driver.vehicle_type}</span>
+              </div>
+              <div style="display: flex; align-items: center; margin-bottom: 4px;">
+                <span style="font-size: 18px; margin-right: 8px;">💰</span>
+                <span style="color: #059669; font-weight: bold;">₹${driver.per_km_rate}/km</span>
+              </div>
+              <div style="display: flex; align-items: center; margin-bottom: 4px;">
+                <span style="font-size: 18px; margin-right: 8px;">📍</span>
+                <span style="color: #6b7280; font-size: 14px;">${driver.distance}km away</span>
+              </div>
+              <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
+                <span style="color: #059669; font-size: 12px; font-weight: bold;">Available Now</span>
+              </div>
             </div>
           `
         });
