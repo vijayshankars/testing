@@ -1902,7 +1902,12 @@ const RiderDashboard = () => {
                   disabled={!estimatedFare || estimatedFare === 0}
                   className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
                 >
-                  {estimatedFare > 0 ? `Book Ride - ₹${estimatedFare}` : 'Enter locations to book ride'}
+                  {estimatedFare > 0 ? 
+                    appliedDiscount ? 
+                      `Book Ride - ₹${appliedDiscount.final_fare} (Save ₹${appliedDiscount.discount_amount})` : 
+                      `Book Ride - ₹${estimatedFare}` 
+                    : 'Enter locations to book ride'
+                  }
                 </button>
               </div>
             </div>
