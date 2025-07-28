@@ -484,7 +484,7 @@ const DriverDashboard = () => {
     } catch (error) {
       console.error('Error getting location:', error);
       // Try to use a fallback location for testing
-      const fallbackLocation = { lat: 28.6139, lng: 77.2090 };
+      const fallbackLocation = { lat: 13.0827, lng: 80.2707 };
       setCurrentLocation(fallbackLocation);
       console.log('Using fallback location:', fallbackLocation);
     }
