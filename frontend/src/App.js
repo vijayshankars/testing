@@ -1342,6 +1342,34 @@ const RiderDashboard = () => {
     setSelectedRideForPayment(null);
   };
 
+  const cancelRide = async (rideId, reason = "User cancelled") => {
+    if (!confirm('Are you sure you want to cancel this ride?')) {
+      return;
+    }
+
+    try {
+      await axios.post(`${API}/rider/cancel-ride`, {
+        ride_id: rideId,
+        reason: reason
+      });
+      
+      alert('Ride cancelled successfully');
+      fetchCurrentRides();
+    } catch (error) {
+      console.error('Error cancelling ride:', error);
+      alert('Failed to cancel ride: ' + (error.response?.data?.detail || 'Unknown error'));
+    }
+  };
+
+  const fetchRideHistory = async () => {
+    try {
+      const response = await axios.get(`${API}/rider/ride-history?limit=50`);
+      setRideHistory(response.data.rides);
+    } catch (error) {
+      console.error('Error fetching ride history:', error);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Header */}
