@@ -609,7 +609,7 @@ def test_available_drivers(result: TestResult, rider_token: str):
                         result.log_failure("Driver data structure", f"Missing fields: {missing_fields}")
                     
                     # Verify fare calculation data is present
-                    if first_driver.get("per_km_rate") and first_driver.get("distance"):
+                    if "per_km_rate" in first_driver and "distance" in first_driver:
                         result.log_success("Fare calculation data available (per_km_rate and distance)")
                     else:
                         result.log_failure("Fare calculation", "Missing per_km_rate or distance data")
