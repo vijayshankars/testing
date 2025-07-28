@@ -332,13 +332,13 @@ async def get_rider_rides(current_user: dict = Depends(get_current_user)):
     if current_user["user_type"] != "rider":
         raise HTTPException(status_code=403, detail="Only riders can view their rides")
     
-    rides = await db.ride_requests.find({"rider_id": current_user["id"]}).sort("created_at", -1).to_list(50)
+    rides = await db.ride_requests.find({"rider_id": current_user["id"]}, {"_id": 0}).sort("created_at", -1).to_list(50)
     
     # Add driver info for accepted rides
     for ride in rides:
         if ride.get("driver_id"):
-            driver_user = await db.users.find_one({"id": ride["driver_id"]})
-            driver_profile = await db.driver_profiles.find_one({"user_id": ride["driver_id"]})
+            driver_user = await db.users.find_one({"id": ride["driver_id"]}, {"_id": 0})
+            driver_profile = await db.driver_profiles.find_one({"user_id": ride["driver_id"]}, {"_id": 0})
             
             if driver_user and driver_profile:
                 ride["driver_info"] = {
