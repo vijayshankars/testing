@@ -551,6 +551,9 @@ const DriverDashboard = () => {
   const [licenseVerificationStatus, setLicenseVerificationStatus] = useState(null);
   const [isVerifyingVehicle, setIsVerifyingVehicle] = useState(false);
   const [vehicleVerificationStatus, setVehicleVerificationStatus] = useState(null);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [selectedRideForCancel, setSelectedRideForCancel] = useState(null);
+  const [cancelReason, setCancelReason] = useState('');
   
   const { user, logout } = useAuth();
   const { getUserLocation } = useGoogleMaps();
