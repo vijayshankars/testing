@@ -16,9 +16,9 @@ import {
   Star
 } from 'lucide-react';
 
-const API = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001/api';
+const API = process.env.REACT_APP_BACKEND_URL ? `${process.env.REACT_APP_BACKEND_URL}/api` : 'http://localhost:8001/api';
 
-const DriverDashboard = ({ user, logout, useAuth, useGoogleMaps }) => {
+const DriverDashboard = () => {
   const [driverProfile, setDriverProfile] = useState(null);
   const [showProfileForm, setShowProfileForm] = useState(false);
   const [rideRequests, setRideRequests] = useState([]);
@@ -47,8 +47,34 @@ const DriverDashboard = ({ user, logout, useAuth, useGoogleMaps }) => {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [selectedRideForReject, setSelectedRideForReject] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
-  
-  const { getUserLocation } = useGoogleMaps();
+
+  // Get user and logout from localStorage/context (simplified approach)
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const logout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = '/auth';
+  };
+
+  // Get user location (simplified approach)
+  const getUserLocation = () => {
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject(new Error('Geolocation not supported'));
+        return;
+      }
+      
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          resolve({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          });
+        },
+        (error) => reject(error)
+      );
+    });
+  };
 
   // Vehicle icons mapping
   const getVehicleIcon = (vehicleType) => {
