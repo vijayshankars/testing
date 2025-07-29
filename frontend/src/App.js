@@ -356,38 +356,6 @@ const useDriverNotifications = (isAvailable, rideRequests) => {
 };
 
 // Rider Dashboard Component
-  
-  // Use notification system
-  const { notificationPermission } = useDriverNotifications(isAvailable, rideRequests);
-
-  // Handle visual flash effect for new requests
-  useEffect(() => {
-    const handleNewRideRequest = (event) => {
-      setFlashEffect(true);
-      setTimeout(() => setFlashEffect(false), 2000);
-    };
-
-    window.addEventListener('newRideRequest', handleNewRideRequest);
-    return () => window.removeEventListener('newRideRequest', handleNewRideRequest);
-  }, []);
-
-  useEffect(() => {
-    fetchDriverProfile();
-    getCurrentLocation();
-  }, []);
-
-  useEffect(() => {
-    if (driverProfile && currentLocation) {
-      updateDriverLocation();
-      fetchRideRequests(); // Fetch immediately when location is available
-      fetchAcceptedRides(); // Fetch accepted rides
-      const interval = setInterval(() => {
-        fetchRideRequests();
-        fetchAcceptedRides();
-      }, 10000); // Check every 10 seconds
-      return () => clearInterval(interval);
-    }
-  }, [driverProfile, currentLocation]);
 
   const getCurrentLocation = async () => {
     try {
