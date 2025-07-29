@@ -1037,7 +1037,7 @@ const DriverDashboard = () => {
       controlDiv.innerHTML = `
         <div style="background: white; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); padding: 8px;">
           <div style="display: flex; align-items: center; margin-bottom: 8px; font-size: 12px; color: #374151;">
-            <span style="background: #f97316; color: white; padding: 2px 6px; border-radius: 4px; margin-right: 6px; font-weight: bold;">
+            <span style="background: #000000; color: white; padding: 2px 6px; border-radius: 4px; margin-right: 6px; font-weight: bold;">
               ${driverVehicleType.toUpperCase()}
             </span>
             Live Navigation
