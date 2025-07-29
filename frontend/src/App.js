@@ -3468,12 +3468,7 @@ const RiderDashboard = () => {
                       <div key={driver.driver_id} className="bg-white border border-gray-200 rounded-lg p-3 hover:shadow-md transition-shadow">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-3">
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm ${
-                              driver.vehicle_type === 'bike' ? 'bg-orange-500' :
-                              driver.vehicle_type === 'auto' ? 'bg-yellow-500' :
-                              driver.vehicle_type === 'car' ? 'bg-blue-500' :
-                              'bg-purple-500'
-                            }`}>
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm ${'bg-black'}`}>
                               {driver.vehicle_type === 'bike' ? '🏍️' :
                                driver.vehicle_type === 'auto' ? '🛺' :
                                driver.vehicle_type === 'car' ? '🚗' : '🚛'}
