@@ -6,7 +6,7 @@ Debug Mobile OTP Authentication Issues
 import requests
 import json
 
-BASE_URL = "https://3be44877-be55-4f11-a89f-8fbc7e4df5e7.preview.emergentagent.com/api"
+BASE_URL = "https://06841ea6-50ad-424b-b520-f2f741bf6fdb.preview.emergentagent.com/api"
 
 def debug_otp_flow():
     print("🔍 Debugging Mobile OTP Authentication Flow")
