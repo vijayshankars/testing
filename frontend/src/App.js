@@ -815,6 +815,72 @@ const DriverDashboard = () => {
     }
 
     try {
+      // Get driver profile to determine vehicle type
+      let driverVehicleType = 'car'; // default
+      try {
+        const driverProfile = await axios.get(`${API}/driver/profile`);
+        driverVehicleType = driverProfile.data.vehicle_type || 'car';
+      } catch (error) {
+        console.log('Could not fetch driver vehicle type, using default car icon');
+      }
+
+      // Vehicle-specific SVG icons
+      const vehicleIcons = {
+        bike: `
+          <svg width="48" height="48" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="24" cy="24" r="20" fill="#f97316" stroke="#ffffff" stroke-width="4"/>
+            <!-- Bike icon -->
+            <g transform="translate(12,12)" fill="white">
+              <circle cx="6" cy="18" r="4" stroke="white" stroke-width="1.5" fill="none"/>
+              <circle cx="18" cy="18" r="4" stroke="white" stroke-width="1.5" fill="none"/>
+              <path d="M6 18 L12 8 L16 8 L18 12 L14 12 L10 18" stroke="white" stroke-width="1.5" fill="none"/>
+              <path d="M12 12 L16 18" stroke="white" stroke-width="1.5"/>
+            </g>
+          </svg>
+        `,
+        auto: `
+          <svg width="48" height="48" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="24" cy="24" r="20" fill="#eab308" stroke="#ffffff" stroke-width="4"/>
+            <!-- Auto rickshaw icon -->
+            <g transform="translate(10,14)" fill="white">
+              <rect x="2" y="8" width="24" height="12" rx="2" stroke="white" stroke-width="1.5" fill="none"/>
+              <circle cx="6" cy="22" r="2" stroke="white" stroke-width="1.5" fill="none"/>
+              <circle cx="22" cy="22" r="2" stroke="white" stroke-width="1.5" fill="none"/>
+              <path d="M8 8 L8 4 L20 4 L20 8" stroke="white" stroke-width="1.5" fill="none"/>
+              <rect x="10" y="10" width="8" height="6" rx="1" fill="white"/>
+            </g>
+          </svg>
+        `,
+        car: `
+          <svg width="48" height="48" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="24" cy="24" r="20" fill="#3b82f6" stroke="#ffffff" stroke-width="4"/>
+            <!-- Car icon -->
+            <g transform="translate(8,16)" fill="white">
+              <rect x="4" y="8" width="24" height="10" rx="2" stroke="white" stroke-width="1.5" fill="none"/>
+              <circle cx="8" cy="20" r="2" stroke="white" stroke-width="1.5" fill="none"/>
+              <circle cx="24" cy="20" r="2" stroke="white" stroke-width="1.5" fill="none"/>
+              <path d="M6 8 L8 4 L24 4 L26 8" stroke="white" stroke-width="1.5" fill="none"/>
+              <rect x="10" y="6" width="4" height="4" rx="0.5" fill="white"/>
+              <rect x="18" y="6" width="4" height="4" rx="0.5" fill="white"/>
+            </g>
+          </svg>
+        `,
+        suv: `
+          <svg width="48" height="48" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="24" cy="24" r="20" fill="#7c3aed" stroke="#ffffff" stroke-width="4"/>
+            <!-- SUV icon -->
+            <g transform="translate(6,14)" fill="white">
+              <rect x="4" y="8" width="28" height="12" rx="2" stroke="white" stroke-width="1.5" fill="none"/>
+              <circle cx="9" cy="22" r="2.5" stroke="white" stroke-width="1.5" fill="none"/>
+              <circle cx="27" cy="22" r="2.5" stroke="white" stroke-width="1.5" fill="none"/>
+              <path d="M6 8 L8 2 L28 2 L30 8" stroke="white" stroke-width="1.5" fill="none"/>
+              <rect x="10" y="4" width="5" height="6" rx="0.5" fill="white"/>
+              <rect x="21" y="4" width="5" height="6" rx="0.5" fill="white"/>
+            </g>
+          </svg>
+        `
+      };
+
       // Initialize the map
       const map = new window.google.maps.Map(mapElement, {
         zoom: 13,
@@ -829,55 +895,67 @@ const DriverDashboard = () => {
         ]
       });
 
-      // Create pickup marker with custom icon
+      // Create pickup marker with vehicle-specific icon
       const pickupMarker = new window.google.maps.Marker({
         position: ride.pickup_location,
         map: map,
-        title: 'Pickup Location: ' + ride.pickup_location.address,
+        title: `Driver Location (${driverVehicleType.toUpperCase()}) - ${ride.pickup_location.address}`,
         icon: {
-          url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-            <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="20" cy="20" r="16" fill="#22c55e" stroke="#ffffff" stroke-width="4"/>
-              <text x="20" y="26" text-anchor="middle" fill="white" font-size="14" font-weight="bold">P</text>
-            </svg>
-          `),
-          scaledSize: new window.google.maps.Size(40, 40),
-          anchor: new window.google.maps.Point(20, 20)
-        }
+          url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(vehicleIcons[driverVehicleType] || vehicleIcons.car),
+          scaledSize: new window.google.maps.Size(48, 48),
+          anchor: new window.google.maps.Point(24, 24)
+        },
+        zIndex: 1000
       });
 
-      // Create drop marker with custom icon
+      // Create drop marker with destination flag icon
       const dropMarker = new window.google.maps.Marker({
         position: ride.drop_location,
         map: map,
-        title: 'Drop Location: ' + ride.drop_location.address,
+        title: 'Destination: ' + ride.drop_location.address,
         icon: {
           url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-            <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="20" cy="20" r="16" fill="#ef4444" stroke="#ffffff" stroke-width="4"/>
-              <text x="20" y="26" text-anchor="middle" fill="white" font-size="14" font-weight="bold">D</text>
+            <svg width="48" height="48" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="24" cy="24" r="20" fill="#dc2626" stroke="#ffffff" stroke-width="4"/>
+              <!-- Flag icon for destination -->
+              <g transform="translate(14,10)" fill="white">
+                <rect x="2" y="4" width="2" height="24" fill="white"/>
+                <path d="M4 4 L4 8 L18 6 L18 12 L4 10 L4 14" fill="white"/>
+                <circle cx="19" cy="9" r="1" fill="white"/>
+              </g>
             </svg>
           `),
-          scaledSize: new window.google.maps.Size(40, 40),
-          anchor: new window.google.maps.Point(20, 20)
-        }
+          scaledSize: new window.google.maps.Size(48, 48),
+          anchor: new window.google.maps.Point(24, 24)
+        },
+        zIndex: 999
       });
 
-      // Add info windows for markers
+      // Enhanced info windows with vehicle information
       const pickupInfoWindow = new window.google.maps.InfoWindow({
         content: `
-          <div style="padding: 8px;">
-            <h3 style="margin: 0 0 4px 0; color: #22c55e; font-weight: bold;">🚗 Pickup Location</h3>
-            <p style="margin: 0; font-size: 14px;">${ride.pickup_location.address}</p>
+          <div style="padding: 12px; min-width: 200px;">
+            <h3 style="margin: 0 0 8px 0; color: #f97316; font-weight: bold; display: flex; align-items: center;">
+              🚗 Driver Location
+            </h3>
+            <div style="background: #f3f4f6; padding: 8px; border-radius: 6px; margin-bottom: 8px;">
+              <div style="font-weight: bold; color: #374151;">Vehicle: ${driverVehicleType.charAt(0).toUpperCase() + driverVehicleType.slice(1)}</div>
+              <div style="font-size: 12px; color: #6b7280;">Pickup Point</div>
+            </div>
+            <p style="margin: 0; font-size: 14px; color: #374151;">${ride.pickup_location.address}</p>
           </div>
         `
       });
 
       const dropInfoWindow = new window.google.maps.InfoWindow({
         content: `
-          <div style="padding: 8px;">
-            <h3 style="margin: 0 0 4px 0; color: #ef4444; font-weight: bold;">🎯 Destination</h3>
-            <p style="margin: 0; font-size: 14px;">${ride.drop_location.address}</p>
+          <div style="padding: 12px; min-width: 200px;">
+            <h3 style="margin: 0 0 8px 0; color: #dc2626; font-weight: bold;">🏁 Destination</h3>
+            <div style="background: #fee2e2; padding: 8px; border-radius: 6px; margin-bottom: 8px;">
+              <div style="font-weight: bold; color: #991b1b;">Drop Location</div>
+              <div style="font-size: 12px; color: #7f1d1d;">Final Destination</div>
+            </div>
+            <p style="margin: 0; font-size: 14px; color: #374151;">${ride.drop_location.address}</p>
           </div>
         `
       });
@@ -916,16 +994,26 @@ const DriverDashboard = () => {
         if (status === 'OK') {
           directionsRenderer.setDirections(result);
           
-          // Display route information
+          // Display route information with vehicle type
           const route = result.routes[0];
           const leg = route.legs[0];
           
           const routeInfoContent = `
             <div style="background: white; border-radius: 8px; padding: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); margin-top: 16px;">
               <h4 style="margin: 0 0 8px 0; color: #2563eb; font-weight: bold;">📍 Route Information</h4>
-              <div style="display: flex; gap: 16px; font-size: 14px;">
-                <div><strong>Distance:</strong> ${leg.distance.text}</div>
-                <div><strong>Duration:</strong> ${leg.duration.text}</div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; font-size: 14px;">
+                <div style="text-align: center; background: #f3f4f6; padding: 6px; border-radius: 4px;">
+                  <div style="font-weight: bold; color: #f97316;">${driverVehicleType.toUpperCase()}</div>
+                  <div style="font-size: 11px; color: #6b7280;">Vehicle</div>
+                </div>
+                <div style="text-align: center; background: #f3f4f6; padding: 6px; border-radius: 4px;">
+                  <div style="font-weight: bold; color: #059669;">${leg.distance.text}</div>
+                  <div style="font-size: 11px; color: #6b7280;">Distance</div>
+                </div>
+                <div style="text-align: center; background: #f3f4f6; padding: 6px; border-radius: 4px;">
+                  <div style="font-weight: bold; color: #7c3aed;">${leg.duration.text}</div>
+                  <div style="font-size: 11px; color: #6b7280;">Duration</div>
+                </div>
               </div>
             </div>
           `;
@@ -939,7 +1027,7 @@ const DriverDashboard = () => {
         }
       });
 
-      // Add map controls
+      // Add map controls with vehicle information
       const controlDiv = document.createElement('div');
       controlDiv.style.position = 'absolute';
       controlDiv.style.top = '10px';
@@ -947,8 +1035,14 @@ const DriverDashboard = () => {
       controlDiv.style.zIndex = '1000';
       
       controlDiv.innerHTML = `
-        <div style="background: white; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); padding: 4px;">
-          <button id="center-route-btn" style="background: #2563eb; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+        <div style="background: white; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); padding: 8px;">
+          <div style="display: flex; align-items: center; margin-bottom: 8px; font-size: 12px; color: #374151;">
+            <span style="background: #f97316; color: white; padding: 2px 6px; border-radius: 4px; margin-right: 6px; font-weight: bold;">
+              ${driverVehicleType.toUpperCase()}
+            </span>
+            Live Navigation
+          </div>
+          <button id="center-route-btn" style="background: #2563eb; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; width: 100%;">
             📍 Center Route
           </button>
         </div>
