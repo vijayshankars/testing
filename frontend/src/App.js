@@ -2441,6 +2441,85 @@ const RiderDashboard = () => {
     }
   }, [currentLocation]);
 
+  // Fetch available vehicles by type when both locations are set
+  const fetchAvailableVehiclesByType = async () => {
+    if (!currentLocation || !dropLocation || !pickupLocation) {
+      return;
+    }
+
+    setIsLoadingVehicles(true);
+    try {
+      const response = await axios.get(`${API}/rider/nearby-drivers`, {
+        params: {
+          lat: currentLocation.lat,
+          lng: currentLocation.lng,
+          radius: 25
+        }
+      });
+      
+      const drivers = response.data.drivers || [];
+      
+      // Group drivers by vehicle type and calculate rates
+      const vehicleTypes = ['bike', 'auto', 'car', 'suv'];
+      const vehicleOptions = [];
+
+      vehicleTypes.forEach(type => {
+        const typeDrivers = drivers.filter(driver => driver.vehicle_type === type);
+        
+        if (typeDrivers.length > 0) {
+          // Calculate average rates and find closest driver
+          const rates = typeDrivers.map(d => d.per_km_rate);
+          const distances = typeDrivers.map(d => d.distance_km);
+          const minRate = Math.min(...rates);
+          const maxRate = Math.max(...rates);
+          const avgRate = Math.round(rates.reduce((a, b) => a + b, 0) / rates.length);
+          const closestDistance = Math.min(...distances);
+          
+          // Estimate fare based on average rate and distance
+          let estimatedFare = 0;
+          if (estimatedDistance > 0) {
+            estimatedFare = Math.round(avgRate * estimatedDistance);
+          }
+
+          vehicleOptions.push({
+            type: type,
+            name: type.charAt(0).toUpperCase() + type.slice(1),
+            icon: type === 'bike' ? '🏍️' : type === 'auto' ? '🛺' : type === 'car' ? '🚗' : '🚛',
+            availableCount: typeDrivers.length,
+            minRate: minRate,
+            maxRate: maxRate,
+            avgRate: avgRate,
+            closestDistance: closestDistance.toFixed(1),
+            estimatedFare: estimatedFare,
+            drivers: typeDrivers.slice(0, 3) // Show top 3 closest drivers
+          });
+        }
+      });
+
+      // Sort by estimated fare (cheapest first)
+      vehicleOptions.sort((a, b) => a.avgRate - b.avgRate);
+      
+      setAvailableVehicles(vehicleOptions);
+      setShowVehicleSelection(vehicleOptions.length > 0);
+      
+    } catch (error) {
+      console.error('Error fetching vehicles by type:', error);
+    } finally {
+      setIsLoadingVehicles(false);
+    }
+  };
+
+  // Auto-fetch vehicles when both pickup and drop locations are available
+  useEffect(() => {
+    if (currentLocation && dropLocation && pickupLocation && estimatedDistance > 0) {
+      fetchAvailableVehiclesByType();
+    } else {
+      setShowVehicleSelection(false);
+      setAvailableVehicles([]);
+      setSelectedVehicleType(null);
+    }
+  }, [currentLocation, dropLocation, pickupLocation, estimatedDistance]);
+
   useEffect(() => {
     if (loaded && mapElement && currentLocation) {
       const map = initMap(mapElement, {
