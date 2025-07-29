@@ -356,29 +356,6 @@ const useDriverNotifications = (isAvailable, rideRequests) => {
 };
 
 // Rider Dashboard Component
-      
-      if (response.data.success) {
-        setLicenseVerificationStatus({
-          success: true,
-          message: 'License verified successfully with VAHAN system!',
-          data: response.data.license_data
-        });
-      } else {
-        setLicenseVerificationStatus({
-          success: false,
-          message: response.data.message || 'License verification failed'
-        });
-      }
-    } catch (error) {
-      console.error('License verification error:', error);
-      setLicenseVerificationStatus({
-        success: false,
-        message: error.response?.data?.detail || 'License verification service unavailable. Please try again later.'
-      });
-    } finally {
-      setIsVerifyingLicense(false);
-    }
-  };
 
   const verifyVehicleWithVahan = async () => {
     if (!profileForm.vehicle_number) {
