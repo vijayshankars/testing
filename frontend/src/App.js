@@ -3411,28 +3411,115 @@ const RiderDashboard = () => {
                             </div>
                           </div>
 
-                          {/* Driver Info */}
+                          {/* Enhanced Vehicle and Driver Info */}
                           {ride.driver_info && (
-                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                              <h4 className="font-medium text-blue-900 mb-2">Driver Details</h4>
-                              <div className="grid grid-cols-2 gap-3 text-sm">
-                                <div className="flex items-center">
-                                  <User className="w-4 h-4 text-blue-600 mr-2" />
-                                  <span className="text-blue-800">{ride.driver_info.name}</span>
-                                </div>
-                                <div className="flex items-center">
-                                  <Phone className="w-4 h-4 text-blue-600 mr-2" />
-                                  <span className="text-blue-800">{ride.driver_info.phone}</span>
-                                </div>
-                                <div className="flex items-center">
-                                  <Car className="w-4 h-4 text-blue-600 mr-2" />
-                                  <span className="text-blue-800">{ride.driver_info.vehicle_type}</span>
-                                </div>
-                                <div className="flex items-center">
-                                  <span className="text-blue-600 mr-2">#</span>
-                                  <span className="text-blue-800 font-mono">{ride.driver_info.vehicle_number}</span>
+                            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4 mb-4">
+                              <div className="flex items-center justify-between mb-3">
+                                <h4 className="font-semibold text-blue-900 flex items-center">
+                                  🚗 Vehicle & Driver Details
+                                </h4>
+                                <div className="flex items-center bg-white px-3 py-1 rounded-full">
+                                  <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center text-white text-sm mr-2">
+                                    {ride.preferred_vehicle_type === 'bike' ? '🏍️' :
+                                     ride.preferred_vehicle_type === 'auto' ? '🛺' :
+                                     ride.preferred_vehicle_type === 'car' ? '🚗' : 
+                                     ride.preferred_vehicle_type === 'suv' ? '🚛' : '🚗'}
+                                  </div>
+                                  <span className="text-sm font-medium text-gray-700 capitalize">
+                                    {ride.preferred_vehicle_type || ride.driver_info.vehicle_type || 'Car'}
+                                  </span>
                                 </div>
                               </div>
+                              
+                              <div className="grid grid-cols-2 gap-4 text-sm">
+                                {/* Driver Information */}
+                                <div className="bg-white rounded-lg p-3">
+                                  <h5 className="font-medium text-gray-800 mb-2 flex items-center">
+                                    👨‍💼 Driver Information
+                                  </h5>
+                                  <div className="space-y-2">
+                                    <div className="flex items-center">
+                                      <User className="w-4 h-4 text-blue-600 mr-2" />
+                                      <span className="text-gray-800 font-medium">{ride.driver_info.name}</span>
+                                    </div>
+                                    <div className="flex items-center">
+                                      <Phone className="w-4 h-4 text-green-600 mr-2" />
+                                      <a href={`tel:${ride.driver_info.phone}`} className="text-green-700 hover:text-green-800 underline">
+                                        {ride.driver_info.phone}
+                                      </a>
+                                    </div>
+                                    {ride.driver_info.rating && (
+                                      <div className="flex items-center">
+                                        <span className="text-yellow-500 mr-2">⭐</span>
+                                        <span className="text-gray-800">{ride.driver_info.rating.toFixed(1)} Rating</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Vehicle Information */}
+                                <div className="bg-white rounded-lg p-3">
+                                  <h5 className="font-medium text-gray-800 mb-2 flex items-center">
+                                    🚙 Vehicle Information
+                                  </h5>
+                                  <div className="space-y-2">
+                                    <div className="flex items-center">
+                                      <Car className="w-4 h-4 text-blue-600 mr-2" />
+                                      <span className="text-gray-800 font-medium capitalize">
+                                        {ride.driver_info.vehicle_type || ride.preferred_vehicle_type || 'Car'}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center">
+                                      <span className="text-purple-600 mr-2">#️⃣</span>
+                                      <span className="text-gray-800 font-mono bg-gray-100 px-2 py-1 rounded text-xs">
+                                        {ride.driver_info.vehicle_number || 'Not Available'}
+                                      </span>
+                                    </div>
+                                    {ride.driver_info.per_km_rate && (
+                                      <div className="flex items-center">
+                                        <span className="text-green-600 mr-2">💰</span>
+                                        <span className="text-gray-800">₹{ride.driver_info.per_km_rate}/km</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Ride OTP Display */}
+                              {ride.ride_otp && ride.status !== 'completed' && (
+                                <div className="mt-3 bg-purple-100 border border-purple-300 rounded-lg p-3">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-sm font-medium text-purple-800">Ride OTP:</span>
+                                    <span className="bg-purple-600 text-white px-3 py-1 rounded-lg font-bold text-lg tracking-wider">
+                                      {ride.ride_otp}
+                                    </span>
+                                  </div>
+                                  <p className="text-xs text-purple-600 mt-1">Share this OTP with your driver</p>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Default Vehicle Info for rides without driver assigned */}
+                          {!ride.driver_info && (
+                            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
+                              <div className="flex items-center justify-between">
+                                <h4 className="font-medium text-gray-800 flex items-center">
+                                  🚗 Requested Vehicle Type
+                                </h4>
+                                <div className="flex items-center bg-white px-3 py-1 rounded-full">
+                                  <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center text-white text-sm mr-2">
+                                    {ride.preferred_vehicle_type === 'bike' ? '🏍️' :
+                                     ride.preferred_vehicle_type === 'auto' ? '🛺' :
+                                     ride.preferred_vehicle_type === 'car' ? '🚗' : 
+                                     ride.preferred_vehicle_type === 'suv' ? '🚛' : '🚗'}
+                                  </div>
+                                  <span className="text-sm font-medium text-gray-700 capitalize">
+                                    {ride.preferred_vehicle_type || 'Car'}
+                                  </span>
+                                </div>
+                              </div>
+                              <p className="text-sm text-gray-600 mt-2">Waiting for {ride.preferred_vehicle_type || 'car'} driver to accept your request...</p>
                             </div>
                           )}
 
