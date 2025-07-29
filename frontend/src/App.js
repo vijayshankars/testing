@@ -1205,21 +1205,37 @@ const DriverDashboard = () => {
 
                       <div className="flex gap-2">
                         {ride.status === 'accepted' && (
-                          <button
-                            onClick={() => setSelectedRideForOTP(ride)}
-                            className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
-                          >
-                            Verify OTP & Start
-                          </button>
+                          <>
+                            <button
+                              onClick={() => setSelectedRideForOTP(ride)}
+                              className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                            >
+                              Verify OTP & Start
+                            </button>
+                            <button
+                              onClick={() => cancelRide(ride.id)}
+                              className="bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors"
+                            >
+                              Cancel
+                            </button>
+                          </>
                         )}
                         
                         {ride.status === 'in_progress' && (
-                          <button
-                            onClick={() => completeRide(ride.id)}
-                            className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors"
-                          >
-                            Complete Ride
-                          </button>
+                          <>
+                            <button
+                              onClick={() => completeRide(ride.id)}
+                              className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors"
+                            >
+                              Complete Ride
+                            </button>
+                            <button
+                              onClick={() => cancelRide(ride.id)}
+                              className="bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors"
+                            >
+                              Cancel
+                            </button>
+                          </>
                         )}
                       </div>
                     </div>
