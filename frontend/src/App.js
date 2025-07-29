@@ -2917,6 +2917,11 @@ const RiderDashboard = () => {
       return;
     }
 
+    if (showVehicleSelection && !selectedVehicleType) {
+      alert('Please select a vehicle type to continue');
+      return;
+    }
+
     try {
       // Get actual coordinates from markers if available
       let pickupCoords = currentLocation;
@@ -2935,6 +2940,15 @@ const RiderDashboard = () => {
         dropCoords = { lat: pos.lat(), lng: pos.lng() };
       }
 
+      // Get fare for selected vehicle type or use default
+      let finalFare = estimatedFare;
+      if (selectedVehicleType && availableVehicles.length > 0) {
+        const selectedVehicle = availableVehicles.find(v => v.type === selectedVehicleType);
+        if (selectedVehicle) {
+          finalFare = selectedVehicle.estimatedFare;
+        }
+      }
+
       const rideData = {
         pickup_location: {
           lat: pickupCoords.lat,
@@ -2947,21 +2961,24 @@ const RiderDashboard = () => {
           address: dropLocation
         },
         estimated_distance: estimatedDistance,
-        estimated_fare: estimatedFare,
+        estimated_fare: finalFare,
+        preferred_vehicle_type: selectedVehicleType || 'car', // Include preferred vehicle type
         promo_code: promoCode || null
       };
 
       const response = await axios.post(`${API}/rider/request-ride`, rideData);
       
       if (response.data.discount_applied) {
-        alert(`🎉 Ride requested successfully with discount!\nOriginal fare: ₹${response.data.estimated_fare}\nDiscount: -₹${response.data.discount_applied.discount_amount}\nFinal fare: ₹${response.data.final_fare}\n\nWaiting for driver to accept...`);
+        alert(`🎉 Ride requested successfully with discount!\nVehicle: ${(selectedVehicleType || 'car').toUpperCase()}\nOriginal fare: ₹${response.data.estimated_fare}\nDiscount: -₹${response.data.discount_applied.discount_amount}\nFinal fare: ₹${response.data.final_fare}\n\nWaiting for ${selectedVehicleType || 'car'} driver to accept...`);
       } else {
-        alert('Ride requested successfully! Waiting for driver to accept...');
+        alert(`Ride requested successfully!\nVehicle: ${(selectedVehicleType || 'car').toUpperCase()}\nEstimated fare: ₹${finalFare}\n\nWaiting for ${selectedVehicleType || 'car'} driver to accept...`);
       }
       
       // Clear form after successful request
       clearLocations();
       clearDiscount();
+      setSelectedVehicleType(null);
+      setShowVehicleSelection(false);
       
       fetchCurrentRides();
     } catch (error) {
