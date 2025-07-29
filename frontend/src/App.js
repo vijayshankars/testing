@@ -1458,6 +1458,178 @@ const DriverDashboard = () => {
         </div>
       )}
 
+      {/* Ride History Section */}
+      {showHistory && (
+        <div className="bg-white rounded-lg shadow p-6 mt-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold">Ride History</h2>
+            <button
+              onClick={() => setShowHistory(false)}
+              className="text-gray-400 hover:text-gray-600"
+            >
+              <XCircle className="w-5 h-5" />
+            </button>
+          </div>
+          
+          {rideHistory.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <Clock className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+              <p className="font-medium">No ride history found</p>
+              <p className="text-sm">Completed rides will appear here</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {rideHistory.map((ride) => (
+                <div key={ride.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex-1">
+                      <div className="flex items-center mb-2">
+                        <MapPin className="w-4 h-4 text-green-600 mr-2" />
+                        <span className="text-sm text-gray-600">From:</span>
+                        <span className="ml-2 font-medium">{ride.pickup_location.address}</span>
+                      </div>
+                      <div className="flex items-center mb-3">
+                        <Navigation className="w-4 h-4 text-red-600 mr-2" />
+                        <span className="text-sm text-gray-600">To:</span>
+                        <span className="ml-2 font-medium">{ride.drop_location.address}</span>
+                      </div>
+                      
+                      <div className="grid grid-cols-3 gap-4 text-sm mb-3">
+                        <div className="bg-gray-50 rounded p-2 text-center">
+                          <div className="font-semibold text-blue-600">₹{ride.estimated_fare}</div>
+                          <div className="text-gray-600 text-xs">Fare</div>
+                        </div>
+                        <div className="bg-gray-50 rounded p-2 text-center">
+                          <div className="font-semibold text-purple-600">{ride.estimated_distance?.toFixed(1) || 'N/A'} km</div>
+                          <div className="text-gray-600 text-xs">Distance</div>
+                        </div>
+                        <div className="bg-gray-50 rounded p-2 text-center">
+                          <div className={`font-semibold text-xs uppercase ${
+                            ride.status === 'completed' ? 'text-green-600' : 
+                            ride.status === 'cancelled' ? 'text-red-600' : 'text-yellow-600'
+                          }`}>
+                            {ride.status}
+                          </div>
+                          <div className="text-gray-600 text-xs">Status</div>
+                        </div>
+                      </div>
+
+                      {ride.rider_info && (
+                        <div className="text-sm text-gray-600 bg-gray-50 rounded p-2">
+                          <div><strong>Rider:</strong> {ride.rider_info.name}</div>
+                          <div><strong>Phone:</strong> {ride.rider_info.phone}</div>
+                        </div>
+                      )}
+
+                      <div className="text-xs text-gray-500 mt-2">
+                        {ride.completed_at && `Completed: ${new Date(ride.completed_at).toLocaleString()}`}
+                        {ride.cancelled_at && `Cancelled: ${new Date(ride.cancelled_at).toLocaleString()}`}
+                        {ride.cancellation_reason && (
+                          <div className="text-red-500 mt-1">Reason: {ride.cancellation_reason}</div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Cancel Ride Modal */}
+      {showCancelModal && selectedRideForCancel && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-2xl w-full max-w-md">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold text-gray-900">Cancel Ride</h2>
+                <button
+                  onClick={() => {
+                    setShowCancelModal(false);
+                    setSelectedRideForCancel(null);
+                    setCancelReason('');
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <XCircle className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <div className="flex items-start">
+                    <span className="text-red-600 mr-2 text-lg">⚠️</span>
+                    <div>
+                      <h3 className="text-red-800 font-medium mb-2">Important Notice</h3>
+                      <p className="text-sm text-red-700">
+                        Cancelling this ride will notify the rider and may affect your rating. 
+                        Please provide a reason for cancellation.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Reason for Cancellation:
+                  </label>
+                  <select
+                    value={cancelReason}
+                    onChange={(e) => setCancelReason(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="">Select a reason</option>
+                    <option value="Vehicle breakdown">Vehicle breakdown</option>
+                    <option value="Emergency">Personal emergency</option>
+                    <option value="Traffic conditions">Severe traffic conditions</option>
+                    <option value="Weather conditions">Poor weather conditions</option>
+                    <option value="Rider not responding">Rider not responding</option>
+                    <option value="Wrong pickup location">Wrong pickup location</option>
+                    <option value="Other">Other reason</option>
+                  </select>
+                </div>
+
+                {cancelReason === 'Other' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Please specify:
+                    </label>
+                    <textarea
+                      value={cancelReason === 'Other' ? '' : cancelReason}
+                      onChange={(e) => setCancelReason(e.target.value)}
+                      placeholder="Please describe the reason..."
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      rows="3"
+                    />
+                  </div>
+                )}
+
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => {
+                      setShowCancelModal(false);
+                      setSelectedRideForCancel(null);
+                      setCancelReason('');
+                    }}
+                    className="flex-1 bg-gray-200 text-gray-800 py-3 px-4 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+                  >
+                    Keep Ride
+                  </button>
+                  <button
+                    onClick={confirmCancelRide}
+                    disabled={!cancelReason.trim()}
+                    className="flex-1 bg-red-600 text-white py-3 px-4 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+                  >
+                    Cancel Ride
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
