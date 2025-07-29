@@ -357,15 +357,6 @@ const useDriverNotifications = (isAvailable, rideRequests) => {
 
 // Rider Dashboard Component
 
-  const fetchRideHistory = async () => {
-    try {
-      const response = await axios.get(`${API}/driver/ride-history?limit=50`);
-      setRideHistory(response.data.rides);
-    } catch (error) {
-      console.error('Error fetching ride history:', error);
-    }
-  };
-
   const verifyRideOTP = async (rideId, otpCode) => {
     if (!otpCode || otpCode.length !== 4) {
       alert('Please enter a valid 4-digit OTP');
