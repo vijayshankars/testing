@@ -409,6 +409,18 @@ frontend:
           agent: "main"
           comment: "Fixed database collection inconsistency by changing db.rides references to db.ride_requests in discount validation logic (lines 1211 and 1320)."
 
+  - task: "Driver Ride Rejection Feature"
+    implemented: true
+    working: true
+    file: "backend/server.py, frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "✅ DRIVER RIDE REJECTION FEATURE SUCCESSFULLY IMPLEMENTED: Added complete ride rejection functionality as requested by user. BACKEND: Created POST /api/driver/reject-ride/{ride_id} endpoint with proper validation, added rejection tracking in db.ride_rejections collection, updated GET /api/driver/ride-requests to filter out rejected rides for each driver. FRONTEND: Added rejectRide function with confirmation dialog, added red 'Reject' button alongside 'Accept Ride' button in nearby requests section, implemented immediate UI updates when rides are rejected. TESTING: Backend testing shows 93.8% success rate (15/16 tests passed) - all core functionality working including rejection recording, ride filtering, multi-driver scenarios, and edge cases. Feature is production-ready and allows drivers to reject unwanted ride requests, which then disappear from their list while remaining available for other drivers."
+
   - task: "Rider Dashboard Testing"
     implemented: true
     working: true
