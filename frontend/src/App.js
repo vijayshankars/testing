@@ -1236,6 +1236,88 @@ const DriverDashboard = () => {
                               <div><strong>Phone:</strong> {ride.rider_info.phone}</div>
                             </div>
                           )}
+
+                          {/* Google Map for In-Progress Rides */}
+                          {ride.status === 'in_progress' && (
+                            <div className="mt-3 bg-white rounded-lg p-3 border">
+                              <h4 className="text-sm font-medium text-gray-700 mb-2">Route Map</h4>
+                              <div 
+                                id={`map-${ride.id}`}
+                                className="w-full h-48 rounded-lg bg-gray-100 flex items-center justify-center"
+                                ref={(el) => {
+                                  if (el && ride.status === 'in_progress') {
+                                    // Initialize map for this ride
+                                    setTimeout(() => {
+                                      if (window.google && window.google.maps) {
+                                        const map = new window.google.maps.Map(el, {
+                                          zoom: 13,
+                                          center: ride.pickup_location,
+                                          mapTypeId: 'roadmap'
+                                        });
+
+                                        // Add pickup marker
+                                        new window.google.maps.Marker({
+                                          position: ride.pickup_location,
+                                          map: map,
+                                          title: 'Pickup Location',
+                                          icon: {
+                                            url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+                                              <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+                                                <circle cx="16" cy="16" r="12" fill="#22c55e" stroke="#ffffff" stroke-width="3"/>
+                                                <text x="16" y="20" text-anchor="middle" fill="white" font-size="12" font-weight="bold">P</text>
+                                              </svg>
+                                            `),
+                                            scaledSize: new window.google.maps.Size(32, 32),
+                                            anchor: new window.google.maps.Point(16, 16)
+                                          }
+                                        });
+
+                                        // Add drop marker
+                                        new window.google.maps.Marker({
+                                          position: ride.drop_location,
+                                          map: map,
+                                          title: 'Drop Location',
+                                          icon: {
+                                            url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+                                              <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+                                                <circle cx="16" cy="16" r="12" fill="#ef4444" stroke="#ffffff" stroke-width="3"/>
+                                                <text x="16" y="20" text-anchor="middle" fill="white" font-size="12" font-weight="bold">D</text>
+                                              </svg>
+                                            `),
+                                            scaledSize: new window.google.maps.Size(32, 32),
+                                            anchor: new window.google.maps.Point(16, 16)
+                                          }
+                                        });
+
+                                        // Add route
+                                        const directionsService = new window.google.maps.DirectionsService();
+                                        const directionsRenderer = new window.google.maps.DirectionsRenderer({
+                                          suppressMarkers: true,
+                                          polylineOptions: {
+                                            strokeColor: '#3b82f6',
+                                            strokeWeight: 4
+                                          }
+                                        });
+                                        directionsRenderer.setMap(map);
+
+                                        directionsService.route({
+                                          origin: ride.pickup_location,
+                                          destination: ride.drop_location,
+                                          travelMode: window.google.maps.TravelMode.DRIVING
+                                        }, (result, status) => {
+                                          if (status === 'OK') {
+                                            directionsRenderer.setDirections(result);
+                                          }
+                                        });
+                                      }
+                                    }, 100);
+                                  }
+                                }}
+                              >
+                                <div className="text-gray-500 text-sm">Loading map...</div>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
 
