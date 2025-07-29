@@ -751,16 +751,13 @@ const DriverDashboard = () => {
     try {
       const response = await axios.post(`${API}/driver/accept-ride/${rideId}`);
       
-      // Remove the accepted ride from the list immediately
-      setRideRequests(prevRequests => 
-        prevRequests.filter(request => request.id !== rideId)
-      );
+      // Clear ALL ride requests since driver is now busy with an accepted ride
+      setRideRequests([]);
       
       alert(`Ride accepted successfully! Ride OTP: ${response.data.ride_otp}\nShare this OTP with the rider for verification.`);
       
-      // Refresh the lists
+      // Refresh the accepted rides list
       setTimeout(() => {
-        fetchRideRequests();
         fetchAcceptedRides();
       }, 2000);
       
