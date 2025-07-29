@@ -355,8 +355,7 @@ const useDriverNotifications = (isAvailable, rideRequests) => {
   return { notificationPermission };
 };
 // Rider Dashboard Component
-  
-  const verifyLicenseWithVahan = async () => {
+const RiderDashboard = () => {
     if (!profileForm.license_number) {
       alert('Please enter license number first');
       return;
