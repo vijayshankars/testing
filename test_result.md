@@ -658,6 +658,7 @@ test_plan:
     - "Driver Ride Cancellation with Reasons" 
     - "Driver Ride History Display"
     - "Database Collection Consistency Fix"
+    - "Driver Ride Rejection Feature"
   stuck_tasks:
     - "Driver Dashboard JavaScript Runtime Error Fix"
     - "Driver Ride History Display"
