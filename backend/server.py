@@ -977,6 +977,30 @@ async def accept_ride(ride_id: str, current_user: dict = Depends(get_current_use
         "instructions": "Share the OTP with the rider for verification"
     }
 
+@api_router.post("/driver/reject-ride/{ride_id}")
+async def reject_ride(ride_id: str, current_user: dict = Depends(get_current_user)):
+    """Reject a ride request and prevent it from showing to this driver again"""
+    if current_user["user_type"] != "driver":
+        raise HTTPException(status_code=403, detail="Only drivers can reject rides")
+    
+    # Check if ride exists and is still available
+    ride = await db.ride_requests.find_one({"id": ride_id, "status": "requested"})
+    if not ride:
+        raise HTTPException(status_code=404, detail="Ride request not found or no longer available")
+    
+    # Record the rejection to avoid showing this ride to the same driver again
+    rejection_record = {
+        "ride_id": ride_id,
+        "driver_id": current_user["id"],
+        "rejected_at": datetime.utcnow(),
+        "reason": "Driver rejected"
+    }
+    
+    # Store the rejection in a separate collection
+    await db.ride_rejections.insert_one(rejection_record)
+    
+    return {"message": "Ride rejected successfully", "status": "rejected"}
+
 @api_router.post("/driver/verify-ride-otp")
 async def verify_ride_otp(
     verification: RideOTPVerification,
