@@ -1634,34 +1634,35 @@ const DriverDashboard = () => {
               </div>
             )}
 
-            {/* Nearby Ride Requests */}
-            <div className={`bg-white rounded-lg shadow p-6 transition-all duration-300 ${flashEffect ? 'ring-4 ring-green-400 bg-green-50' : ''}`}>
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold flex items-center">
-                  Nearby Ride Requests
-                  {notificationPermission !== 'granted' && (
+            {/* Nearby Ride Requests - Only show when no active rides */}
+            {acceptedRides.length === 0 && (
+              <div className={`bg-white rounded-lg shadow p-6 transition-all duration-300 ${flashEffect ? 'ring-4 ring-green-400 bg-green-50' : ''}`}>
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-lg font-semibold flex items-center">
+                    Nearby Ride Requests
+                    {notificationPermission !== 'granted' && (
+                      <button
+                        onClick={() => Notification.requestPermission()}
+                        className="ml-2 text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-full hover:bg-blue-200"
+                        title="Enable notifications for new ride requests"
+                      >
+                        🔔 Enable Alerts
+                      </button>
+                    )}
+                  </h2>
+                  <div className="flex items-center space-x-2">
                     <button
-                      onClick={() => Notification.requestPermission()}
-                      className="ml-2 text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-full hover:bg-blue-200"
-                      title="Enable notifications for new ride requests"
+                      onClick={fetchRideRequests}
+                      className="text-blue-600 hover:text-blue-800 text-sm"
                     >
-                      🔔 Enable Alerts
+                      Refresh
                     </button>
-                  )}
-                </h2>
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={fetchRideRequests}
-                    className="text-blue-600 hover:text-blue-800 text-sm"
-                  >
-                    Refresh
-                  </button>
-                  <div className={`w-2 h-2 rounded-full ${isAvailable ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                  <span className="text-sm text-gray-600">
-                    {isAvailable ? 'Receiving requests' : 'Offline'}
-                  </span>
+                    <div className={`w-2 h-2 rounded-full ${isAvailable ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                    <span className="text-sm text-gray-600">
+                      {isAvailable ? 'Receiving requests' : 'Offline'}
+                    </span>
+                  </div>
                 </div>
-              </div>
             
             {!isAvailable ? (
               <div className="text-center py-8 text-gray-500">
