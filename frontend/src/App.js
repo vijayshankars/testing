@@ -3133,33 +3133,6 @@ const RiderDashboard = () => {
               </div>
             </div>
 
-            {/* Available Drivers */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold mb-4">Available Drivers Nearby</h2>
-              
-              {availableDrivers.length === 0 ? (
-                <div className="text-center py-4 text-gray-500">
-                  <Car className="w-8 h-8 mx-auto mb-2 text-gray-300" />
-                  <p>No drivers available nearby</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {availableDrivers.slice(0, 5).map((driver, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                      <div>
-                        <div className="font-medium">{driver.name}</div>
-                        <div className="text-sm text-gray-600">
-                          {driver.vehicle_type} • {driver.distance} km away
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="font-bold text-green-600">₹{driver.per_km_rate}/km</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
           </div>
 
           {/* Map and Current Rides */}
