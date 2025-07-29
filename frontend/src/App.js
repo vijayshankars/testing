@@ -5180,7 +5180,7 @@ function App() {
           </Routes>
         </div>
       </BrowserRouter>
-    </>
+    </AuthProvider>
   );
 }
 
