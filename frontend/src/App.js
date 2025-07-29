@@ -268,182 +268,7 @@ const AuthPage = () => {
 };
 
 // Legacy Email/Password Authentication (kept for backward compatibility)
-const LegacyAuthForm = ({ onSwitch }) => {
-  const [isLogin, setIsLogin] = useState(true);
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    name: '',
-    phone: '',
-    user_type: 'rider'
-  });
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  
-  const { login } = useAuth();
-  const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-
-    try {
-      const url = isLogin ? `${API}/auth/login` : `${API}/auth/register`;
-      const data = isLogin 
-        ? { email: formData.email, password: formData.password }
-        : formData;
-
-      const response = await axios.post(url, data);
-      
-      login(response.data, response.data.token);
-      
-      if (response.data.user_type === 'driver') {
-        navigate('/driver-dashboard');
-      } else {
-        navigate('/rider-dashboard');
-      }
-    } catch (error) {
-      setError(error.response?.data?.detail || 'Authentication failed');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div>
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
-            {error}
-          </div>
-        )}
-
-        {!isLogin && (
-          <>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
-              <input
-                type="text"
-                required
-                className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
-              <input
-                type="tel"
-                required
-                className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">I am a</label>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  className={`p-3 rounded-lg border-2 transition-all ${
-                    formData.user_type === 'rider'
-                      ? 'border-blue-500 bg-blue-50 text-blue-600'
-                      : 'border-gray-300 text-gray-600 hover:border-gray-400'
-                  }`}
-                  onClick={() => setFormData({ ...formData, user_type: 'rider' })}
-                >
-                  <Users className="w-5 h-5 mx-auto mb-1" />
-                  Rider
-                </button>
-                <button
-                  type="button"
-                  className={`p-3 rounded-lg border-2 transition-all ${
-                    formData.user_type === 'driver'
-                      ? 'border-blue-500 bg-blue-50 text-blue-600'
-                      : 'border-gray-300 text-gray-600 hover:border-gray-400'
-                  }`}
-                  onClick={() => setFormData({ ...formData, user_type: 'driver' })}
-                >
-                  <Car className="w-5 h-5 mx-auto mb-1" />
-                  Driver
-                </button>
-              </div>
-            </div>
-          </>
-        )}
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-          <input
-            type="email"
-            required
-            className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            value={formData.email}
-            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
-          <div className="relative">
-            <input
-              type={showPassword ? 'text' : 'password'}
-              required
-              className="w-full px-3 py-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-            />
-            <button
-              type="button"
-              className="absolute inset-y-0 right-0 pr-3 flex items-center"
-              onClick={() => setShowPassword(!showPassword)}
-            >
-              {showPassword ? (
-                <EyeOff className="w-5 h-5 text-gray-400" />
-              ) : (
-                <Eye className="w-5 h-5 text-gray-400" />
-              )}
-            </button>
-          </div>
-        </div>
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {loading ? 'Processing...' : (isLogin ? 'Sign In' : 'Sign Up')}
-        </button>
-      </form>
-
-      <div className="mt-6 space-y-3">
-        <div className="text-center">
-          <button
-            type="button"
-            className="text-blue-600 hover:text-blue-500"
-            onClick={() => setIsLogin(!isLogin)}
-          >
-            {isLogin ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
-          </button>
-        </div>
-        
-        <div className="text-center">
-          <button
-            type="button"
-            className="text-sm text-gray-500 hover:text-gray-700"
-            onClick={onSwitch}
-          >
-            Use mobile number instead
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 // Notification Hook for Driver Alerts
 const useDriverNotifications = (isAvailable, rideRequests) => {
@@ -1344,7 +1169,7 @@ const DriverDashboard = () => {
   }
 
   return (
-    <>
+    
       <div className="min-h-screen bg-gray-100">
         {/* Header */}
         <div className="bg-white shadow-sm">
@@ -1795,7 +1620,7 @@ const DriverDashboard = () => {
           </div>
         </div>
       </div>
-    </div>
+            )
 
     {/* OTP Verification Modal */}
     {selectedRideForOTP && (
@@ -1959,83 +1784,7 @@ const DriverDashboard = () => {
         </div>
       )}
 
-      {/* Reject Ride Modal */}
-      {showRejectModal && selectedRideForReject && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-2xl w-full max-w-md">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold text-gray-900">Reject Ride Request</h2>
-                <button
-                  onClick={() => {
-                    setShowRejectModal(false);
-                    setSelectedRideForReject(null);
-                    setRejectReason('');
-                  }}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <XCircle className="w-6 h-6" />
-                </button>
-              </div>
 
-              <div className="space-y-4">
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                  <div className="flex items-start">
-                    <div className="text-yellow-600 mr-2">⚠️</div>
-                    <div>
-                      <p className="text-sm text-yellow-800 font-medium">
-                        Why are you rejecting this ride request?
-                      </p>
-                      <p className="text-xs text-yellow-600 mt-1">
-                        This will help us improve our matching system.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Rejection Reason
-                  </label>
-                  <select
-                    value={rejectReason}
-                    onChange={(e) => setRejectReason(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="">Select a reason...</option>
-                    <option value="too_far">Pickup location too far</option>
-                    <option value="wrong_direction">Going in wrong direction</option>
-                    <option value="low_fare">Fare too low</option>
-                    <option value="traffic_issue">Heavy traffic expected</option>
-                    <option value="personal_reason">Personal reason</option>
-                    <option value="other">Other</option>
-                  </select>
-                </div>
-
-                <div className="flex space-x-3">
-                  <button
-                    onClick={() => {
-                      setShowRejectModal(false);
-                      setSelectedRideForReject(null);
-                      setRejectReason('');
-                    }}
-                    className="flex-1 bg-gray-200 text-gray-800 py-3 px-4 rounded-lg hover:bg-gray-300 transition-colors font-medium"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={confirmRejectRide}
-                    disabled={!rejectReason.trim()}
-                    className="flex-1 bg-red-600 text-white py-3 px-4 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
-                  >
-                    Reject Ride
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 };
