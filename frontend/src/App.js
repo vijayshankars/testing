@@ -840,6 +840,36 @@ const DriverDashboard = () => {
     }
   };
 
+  const cancelRide = async (rideId) => {
+    setSelectedRideForCancel(rideId);
+    setShowCancelModal(true);
+  };
+
+  const confirmCancelRide = async () => {
+    if (!cancelReason.trim()) {
+      alert('Please provide a reason for cancellation');
+      return;
+    }
+
+    try {
+      const response = await axios.post(`${API}/driver/cancel-ride`, {
+        ride_id: selectedRideForCancel,
+        reason: cancelReason
+      });
+      
+      alert('✅ Ride cancelled successfully!');
+      setShowCancelModal(false);
+      setSelectedRideForCancel(null);
+      setCancelReason('');
+      fetchAcceptedRides();
+      fetchRideHistory();
+    } catch (error) {
+      console.error('Error cancelling ride:', error);
+      const errorMessage = error.response?.data?.detail || error.message || 'Unknown error';
+      alert('❌ Failed to cancel ride: ' + errorMessage);
+    }
+  };
+
   if (showProfileForm) {
     return (
       <div className="min-h-screen bg-gray-100 p-4">
