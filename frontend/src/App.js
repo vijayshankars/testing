@@ -828,7 +828,7 @@ const DriverDashboard = () => {
       const vehicleIcons = {
         bike: `
           <svg width="48" height="48" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="24" cy="24" r="20" fill="#f97316" stroke="#ffffff" stroke-width="4"/>
+            <circle cx="24" cy="24" r="20" fill="#000000" stroke="#ffffff" stroke-width="4"/>
             <!-- Bike icon -->
             <g transform="translate(12,12)" fill="white">
               <circle cx="6" cy="18" r="4" stroke="white" stroke-width="1.5" fill="none"/>
@@ -840,7 +840,7 @@ const DriverDashboard = () => {
         `,
         auto: `
           <svg width="48" height="48" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="24" cy="24" r="20" fill="#eab308" stroke="#ffffff" stroke-width="4"/>
+            <circle cx="24" cy="24" r="20" fill="#000000" stroke="#ffffff" stroke-width="4"/>
             <!-- Auto rickshaw icon -->
             <g transform="translate(10,14)" fill="white">
               <rect x="2" y="8" width="24" height="12" rx="2" stroke="white" stroke-width="1.5" fill="none"/>
@@ -853,7 +853,7 @@ const DriverDashboard = () => {
         `,
         car: `
           <svg width="48" height="48" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="24" cy="24" r="20" fill="#3b82f6" stroke="#ffffff" stroke-width="4"/>
+            <circle cx="24" cy="24" r="20" fill="#000000" stroke="#ffffff" stroke-width="4"/>
             <!-- Car icon -->
             <g transform="translate(8,16)" fill="white">
               <rect x="4" y="8" width="24" height="10" rx="2" stroke="white" stroke-width="1.5" fill="none"/>
@@ -867,7 +867,7 @@ const DriverDashboard = () => {
         `,
         suv: `
           <svg width="48" height="48" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="24" cy="24" r="20" fill="#7c3aed" stroke="#ffffff" stroke-width="4"/>
+            <circle cx="24" cy="24" r="20" fill="#000000" stroke="#ffffff" stroke-width="4"/>
             <!-- SUV icon -->
             <g transform="translate(6,14)" fill="white">
               <rect x="4" y="8" width="28" height="12" rx="2" stroke="white" stroke-width="1.5" fill="none"/>
