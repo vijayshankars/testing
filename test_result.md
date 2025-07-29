@@ -485,13 +485,16 @@ frontend:
     implemented: true
     working: false
     file: "frontend/src/App.js"
-    stuck_count: 1
+    stuck_count: 2
     priority: "high"
     needs_retesting: true
     status_history:
         - working: false
           agent: "main"
           comment: "✅ ENHANCED LIVE RIDE TRACKING IMPLEMENTED BUT JSX ERROR: Successfully implemented comprehensive live ride tracking for in-progress rides as requested. FEATURES IMPLEMENTED: 1) ✅ Hide Nearby Requests: Driver dashboard now shows only accepted/in-progress rides when driver has an active ride, nearby ride requests are hidden when acceptedRides.length > 0, creates focused driving experience, 2) ✅ Enhanced Live Tracking: Added 'Live Trip Tracking' section for in-progress rides with animated LIVE indicator, real-time trip status display showing current time/distance/fare, enhanced 396px height map with green border for active rides, 3) ✅ Live Trip Status: Added live status cards showing current time, total distance, and trip fare, green styling to indicate active trip status, real-time clock display, 4) ✅ Live Navigation Instructions: Added comprehensive navigation instruction panel, shows trip status as 'IN PROGRESS' with green badge, displays start time and next action guidance, provides clear navigation flow, 5) ✅ Enhanced Map Integration: Map title changes based on ride status (Live Trip Tracking vs Route Navigation), larger map size for in-progress rides, additional LIVE indicator with pulsing animation. ISSUE: JSX syntax error at line 1825 preventing compilation - Adjacent JSX elements must be wrapped in enclosing tag. The functionality is implemented but blocked by React Fragment structure issue around modals section. SOLUTION NEEDED: Fix JSX structure to properly wrap all elements in React Fragment to resolve parsing error and enable the enhanced live tracking features."
+        - working: false
+          agent: "main" 
+          comment: "PERSISTENT JSX SYNTAX ERROR: Multiple attempts to fix JSX parsing error at line 1822:8 'Adjacent JSX elements must be wrapped in an enclosing tag'. Root cause analysis shows there are 2 missing closing div tags between lines 1368-1821 in DriverDashboard component. Verified React Fragment structure (<> at line 1347, </> at line 2184) is correct. Investigated all conditional rendering blocks and found they are properly closed. Counted div tags and confirmed imbalance (90 opening divs vs 88 closing divs in the problematic section). The error prevents frontend compilation despite enhanced live tracking functionality being fully implemented. Need to locate and fix the specific unclosed div tags causing the JSX structure imbalance."
 
   - task: "Real-Time Live Driver Map for Riders"
     implemented: true
