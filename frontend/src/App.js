@@ -355,14 +355,7 @@ const useDriverNotifications = (isAvailable, rideRequests) => {
   return { notificationPermission };
 };
 
-    
-    setIsVerifyingLicense(true);
-    setLicenseVerificationStatus(null);
-    
-    try {
-      const response = await axios.post(`${API}/driver/verify-license`, {
-        license_number: profileForm.license_number
-      });
+// Rider Dashboard Component
       
       if (response.data.success) {
         setLicenseVerificationStatus({
