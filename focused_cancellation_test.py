@@ -10,7 +10,7 @@ import time
 from typing import Dict, Any, Optional
 
 # Configuration
-BASE_URL = "https://87aa55a7-7445-442a-b69c-85a42d10dc65.preview.emergentagent.com/api"
+BASE_URL = "https://eeecc66c-8e45-4d9e-be52-12ef3fc1477e.preview.emergentagent.com/api"
 TIMEOUT = 30
 
 def make_request(method: str, endpoint: str, data: Optional[Dict] = None, 

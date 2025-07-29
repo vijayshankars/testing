@@ -6,7 +6,7 @@ Test Demo OTP functionality with fresh sessions
 import requests
 import json
 
-BASE_URL = "https://87aa55a7-7445-442a-b69c-85a42d10dc65.preview.emergentagent.com/api"
+BASE_URL = "https://eeecc66c-8e45-4d9e-be52-12ef3fc1477e.preview.emergentagent.com/api"
 
 def test_demo_otp():
     print("🔍 Testing Demo OTP Functionality")
