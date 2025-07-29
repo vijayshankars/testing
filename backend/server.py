@@ -925,9 +925,19 @@ async def get_ride_requests_for_driver(current_user: dict = Depends(get_current_
     
     # Find nearby ride requests within 25km radius
     ride_requests = await db.ride_requests.find({"status": "requested"}, {"_id": 0}).to_list(100)
+    
+    # Get rides rejected by this driver
+    rejected_ride_ids = set()
+    rejected_rides = await db.ride_rejections.find({"driver_id": current_user["id"]}).to_list(1000)
+    rejected_ride_ids = {rejection["ride_id"] for rejection in rejected_rides}
+    
     nearby_requests = []
     
     for request in ride_requests:
+        # Skip rides that have been rejected by this driver
+        if request["id"] in rejected_ride_ids:
+            continue
+            
         distance = calculate_distance(
             driver_profile["current_location"],
             request["pickup_location"]
