@@ -3098,6 +3098,101 @@ const RiderDashboard = () => {
                     </div>
                   )}
                 </div>
+
+                {/* Vehicle Selection Section */}
+                {showVehicleSelection && (
+                  <div className="border-t border-gray-200 pt-4 mt-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-md font-medium text-gray-800 flex items-center">
+                        🚗 Choose Your Vehicle
+                      </h3>
+                      {isLoadingVehicles && (
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent"></div>
+                      )}
+                    </div>
+                    
+                    <div className="space-y-3">
+                      {availableVehicles.map((vehicle) => (
+                        <div
+                          key={vehicle.type}
+                          onClick={() => setSelectedVehicleType(vehicle.type)}
+                          className={`border rounded-lg p-4 cursor-pointer transition-all hover:shadow-md ${
+                            selectedVehicleType === vehicle.type
+                              ? 'border-blue-500 bg-blue-50 shadow-md'
+                              : 'border-gray-200 hover:border-gray-300'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-12 h-12 bg-black rounded-full flex items-center justify-center text-white text-xl">
+                                {vehicle.icon}
+                              </div>
+                              <div>
+                                <div className="font-medium text-gray-900">
+                                  {vehicle.name}
+                                  {selectedVehicleType === vehicle.type && (
+                                    <span className="ml-2 text-blue-600">✓</span>
+                                  )}
+                                </div>
+                                <div className="text-sm text-gray-500">
+                                  {vehicle.availableCount} available • {vehicle.closestDistance} km away
+                                </div>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-lg font-bold text-green-600">
+                                ₹{vehicle.estimatedFare}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                ₹{vehicle.avgRate}/km avg
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* Rate Range */}
+                          <div className="mt-3 pt-3 border-t border-gray-100">
+                            <div className="flex items-center justify-between text-xs text-gray-500">
+                              <span>Rate range: ₹{vehicle.minRate} - ₹{vehicle.maxRate}/km</span>
+                              <span>{vehicle.estimatedDistance?.toFixed(1) || estimatedDistance?.toFixed(1)} km trip</span>
+                            </div>
+                          </div>
+
+                          {/* Top Drivers Preview */}
+                          {vehicle.drivers && vehicle.drivers.length > 0 && (
+                            <div className="mt-2 flex items-center space-x-2">
+                              <span className="text-xs text-gray-500">Available drivers:</span>
+                              {vehicle.drivers.slice(0, 3).map((driver, index) => (
+                                <div
+                                  key={driver.driver_id}
+                                  className="text-xs bg-gray-100 px-2 py-1 rounded"
+                                  title={`${driver.name} - ⭐ ${driver.rating.toFixed(1)}`}
+                                >
+                                  {driver.name.split(' ')[0]}
+                                </div>
+                              ))}
+                              {vehicle.availableCount > 3 && (
+                                <span className="text-xs text-gray-400">
+                                  +{vehicle.availableCount - 3} more
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+
+                    {selectedVehicleType && (
+                      <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                        <div className="text-sm text-green-800">
+                          <strong>Selected:</strong> {availableVehicles.find(v => v.type === selectedVehicleType)?.name} 
+                          <span className="ml-2">
+                            Estimated Fare: ₹{availableVehicles.find(v => v.type === selectedVehicleType)?.estimatedFare}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
                 
                 <div className="grid grid-cols-2 gap-3">
                   <button
