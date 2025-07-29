@@ -806,6 +806,170 @@ const DriverDashboard = () => {
     }
   };
 
+  // Enhanced Google Maps initialization for current rides
+  const initializeCurrentRideMap = async (ride) => {
+    const mapElement = document.getElementById(`current-ride-map-${ride.id}`);
+    if (!mapElement || !window.google || !window.google.maps) {
+      mapElement.innerHTML = '<div class="flex items-center justify-center h-80 text-red-500">❌ Google Maps not loaded</div>';
+      return;
+    }
+
+    try {
+      // Initialize the map
+      const map = new window.google.maps.Map(mapElement, {
+        zoom: 13,
+        center: ride.pickup_location,
+        mapTypeId: 'roadmap',
+        styles: [
+          {
+            featureType: 'poi',
+            elementType: 'labels',
+            stylers: [{ visibility: 'off' }]
+          }
+        ]
+      });
+
+      // Create pickup marker with custom icon
+      const pickupMarker = new window.google.maps.Marker({
+        position: ride.pickup_location,
+        map: map,
+        title: 'Pickup Location: ' + ride.pickup_location.address,
+        icon: {
+          url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+            <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="20" cy="20" r="16" fill="#22c55e" stroke="#ffffff" stroke-width="4"/>
+              <text x="20" y="26" text-anchor="middle" fill="white" font-size="14" font-weight="bold">P</text>
+            </svg>
+          `),
+          scaledSize: new window.google.maps.Size(40, 40),
+          anchor: new window.google.maps.Point(20, 20)
+        }
+      });
+
+      // Create drop marker with custom icon
+      const dropMarker = new window.google.maps.Marker({
+        position: ride.drop_location,
+        map: map,
+        title: 'Drop Location: ' + ride.drop_location.address,
+        icon: {
+          url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+            <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="20" cy="20" r="16" fill="#ef4444" stroke="#ffffff" stroke-width="4"/>
+              <text x="20" y="26" text-anchor="middle" fill="white" font-size="14" font-weight="bold">D</text>
+            </svg>
+          `),
+          scaledSize: new window.google.maps.Size(40, 40),
+          anchor: new window.google.maps.Point(20, 20)
+        }
+      });
+
+      // Add info windows for markers
+      const pickupInfoWindow = new window.google.maps.InfoWindow({
+        content: `
+          <div style="padding: 8px;">
+            <h3 style="margin: 0 0 4px 0; color: #22c55e; font-weight: bold;">🚗 Pickup Location</h3>
+            <p style="margin: 0; font-size: 14px;">${ride.pickup_location.address}</p>
+          </div>
+        `
+      });
+
+      const dropInfoWindow = new window.google.maps.InfoWindow({
+        content: `
+          <div style="padding: 8px;">
+            <h3 style="margin: 0 0 4px 0; color: #ef4444; font-weight: bold;">🎯 Destination</h3>
+            <p style="margin: 0; font-size: 14px;">${ride.drop_location.address}</p>
+          </div>
+        `
+      });
+
+      pickupMarker.addListener('click', () => {
+        dropInfoWindow.close();
+        pickupInfoWindow.open(map, pickupMarker);
+      });
+
+      dropMarker.addListener('click', () => {
+        pickupInfoWindow.close();
+        dropInfoWindow.open(map, dropMarker);
+      });
+
+      // Add route with enhanced styling
+      const directionsService = new window.google.maps.DirectionsService();
+      const directionsRenderer = new window.google.maps.DirectionsRenderer({
+        suppressMarkers: true, // We'll use our custom markers
+        polylineOptions: {
+          strokeColor: '#2563eb',
+          strokeWeight: 6,
+          strokeOpacity: 0.8
+        }
+      });
+      directionsRenderer.setMap(map);
+
+      // Get directions
+      directionsService.route({
+        origin: ride.pickup_location,
+        destination: ride.drop_location,
+        travelMode: window.google.maps.TravelMode.DRIVING,
+        optimizeWaypoints: true,
+        avoidHighways: false,
+        avoidTolls: false
+      }, (result, status) => {
+        if (status === 'OK') {
+          directionsRenderer.setDirections(result);
+          
+          // Display route information
+          const route = result.routes[0];
+          const leg = route.legs[0];
+          
+          const routeInfoContent = `
+            <div style="background: white; border-radius: 8px; padding: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); margin-top: 16px;">
+              <h4 style="margin: 0 0 8px 0; color: #2563eb; font-weight: bold;">📍 Route Information</h4>
+              <div style="display: flex; gap: 16px; font-size: 14px;">
+                <div><strong>Distance:</strong> ${leg.distance.text}</div>
+                <div><strong>Duration:</strong> ${leg.duration.text}</div>
+              </div>
+            </div>
+          `;
+          
+          // Add route info box
+          setTimeout(() => {
+            mapElement.insertAdjacentHTML('beforeend', routeInfoContent);
+          }, 1000);
+        } else {
+          console.error('Directions request failed due to ' + status);
+        }
+      });
+
+      // Add map controls
+      const controlDiv = document.createElement('div');
+      controlDiv.style.position = 'absolute';
+      controlDiv.style.top = '10px';
+      controlDiv.style.right = '10px';
+      controlDiv.style.zIndex = '1000';
+      
+      controlDiv.innerHTML = `
+        <div style="background: white; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); padding: 4px;">
+          <button id="center-route-btn" style="background: #2563eb; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+            📍 Center Route
+          </button>
+        </div>
+      `;
+      
+      mapElement.appendChild(controlDiv);
+      
+      document.getElementById('center-route-btn').addEventListener('click', () => {
+        const bounds = new window.google.maps.LatLngBounds();
+        bounds.extend(ride.pickup_location);
+        bounds.extend(ride.drop_location);
+        map.fitBounds(bounds);
+        map.setZoom(Math.min(map.getZoom(), 15));
+      });
+
+    } catch (error) {
+      console.error('Error initializing current ride map:', error);
+      mapElement.innerHTML = '<div class="flex items-center justify-center h-80 text-red-500">❌ Error loading map</div>';
+    }
+  };
+
   const fetchAcceptedRides = async () => {
     try {
       const response = await axios.get(`${API}/driver/ride-history?status=accepted`);
