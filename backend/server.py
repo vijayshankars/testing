@@ -330,7 +330,23 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
 
 def calculate_distance(loc1: Dict[str, float], loc2: Dict[str, float]) -> float:
     """Calculate distance between two locations in kilometers"""
-    return geodesic((loc1["lat"], loc1["lng"]), (loc2["lat"], loc2["lng"])).kilometers
+    try:
+        # Validate coordinates
+        lat1, lng1 = loc1.get("lat"), loc1.get("lng")
+        lat2, lng2 = loc2.get("lat"), loc2.get("lng")
+        
+        # Check if coordinates are valid numbers
+        if not all(isinstance(coord, (int, float)) for coord in [lat1, lng1, lat2, lng2]):
+            return float('inf')  # Return infinite distance for invalid coordinates
+        
+        # Check if coordinates are within valid ranges
+        if not (-90 <= lat1 <= 90) or not (-180 <= lng1 <= 180) or \
+           not (-90 <= lat2 <= 90) or not (-180 <= lng2 <= 180):
+            return float('inf')
+            
+        return geodesic((lat1, lng1), (lat2, lng2)).kilometers
+    except (ValueError, TypeError, KeyError):
+        return float('inf')  # Return infinite distance for any calculation errors
 
 def validate_document(document_data: Dict[str, Any]) -> bool:
     """Validate uploaded document"""
