@@ -357,26 +357,6 @@ const useDriverNotifications = (isAvailable, rideRequests) => {
 
 // Rider Dashboard Component
 
-  const completeRide = async (rideId) => {
-    if (!confirm('Mark this ride as completed?')) {
-      return;
-    }
-
-    try {
-      await axios.post(`${API}/driver/complete-ride`, {
-        ride_id: rideId,
-        status: 'completed'
-      });
-      
-      alert('Ride completed successfully!');
-      fetchAcceptedRides();
-      fetchRideHistory();
-    } catch (error) {
-      console.error('Error completing ride:', error);
-      alert('Failed to complete ride');
-    }
-  };
-
   const cancelRide = async (rideId) => {
     setSelectedRideForCancel(rideId);
     setShowCancelModal(true);
