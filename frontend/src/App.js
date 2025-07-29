@@ -1756,6 +1756,99 @@ const DriverDashboard = () => {
         </div>
       )}
 
+      {/* Reject Ride Modal */}
+      {showRejectModal && selectedRideForReject && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-2xl w-full max-w-md">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold text-gray-900">Reject Ride Request</h2>
+                <button
+                  onClick={() => {
+                    setShowRejectModal(false);
+                    setSelectedRideForReject(null);
+                    setRejectReason('');
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <XCircle className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                  <div className="flex items-start">
+                    <span className="text-orange-600 mr-2 text-lg">ℹ️</span>
+                    <div>
+                      <h3 className="text-orange-800 font-medium mb-2">Ride Rejection</h3>
+                      <p className="text-sm text-orange-700">
+                        Please provide a reason for rejecting this ride request. This will help improve our service.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Reason for Rejection:
+                  </label>
+                  <select
+                    value={rejectReason}
+                    onChange={(e) => setRejectReason(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="">Select a reason</option>
+                    <option value="Too far from pickup location">Too far from pickup location</option>
+                    <option value="Going in different direction">Going in different direction</option>
+                    <option value="Break time">Taking a break</option>
+                    <option value="End of shift">End of shift</option>
+                    <option value="Vehicle issue">Vehicle issue</option>
+                    <option value="Traffic conditions">Heavy traffic in area</option>
+                    <option value="Personal preference">Personal preference</option>
+                    <option value="Other">Other reason</option>
+                  </select>
+                </div>
+
+                {rejectReason === 'Other' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Please specify:
+                    </label>
+                    <textarea
+                      value={rejectReason === 'Other' ? '' : rejectReason}
+                      onChange={(e) => setRejectReason(e.target.value)}
+                      placeholder="Please describe your reason..."
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      rows="3"
+                    />
+                  </div>
+                )}
+
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => {
+                      setShowRejectModal(false);
+                      setSelectedRideForReject(null);
+                      setRejectReason('');
+                    }}
+                    className="flex-1 bg-gray-200 text-gray-800 py-3 px-4 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmRejectRide}
+                    disabled={!rejectReason.trim()}
+                    className="flex-1 bg-red-600 text-white py-3 px-4 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+                  >
+                    Reject Ride
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
