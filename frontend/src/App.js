@@ -2225,7 +2225,6 @@ const RiderDashboard = () => {
       return;
     }
 
-    setIsLoadingDrivers(true);
     try {
       const response = await axios.get(`${API}/rider/nearby-drivers`, {
         params: {
@@ -2235,17 +2234,10 @@ const RiderDashboard = () => {
         }
       });
       
-      setNearbyDrivers(response.data.drivers || []);
       console.log(`Found ${response.data.drivers.length} nearby drivers`);
       
-      // Update map if it's open
-      if (showLiveDriverMap && liveMapInstance) {
-        updateDriverMarkers(response.data.drivers || []);
-      }
     } catch (error) {
       console.error('Error fetching nearby drivers:', error);
-    } finally {
-      setIsLoadingDrivers(false);
     }
   };
 
