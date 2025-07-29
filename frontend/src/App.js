@@ -1003,7 +1003,7 @@ const DriverDashboard = () => {
               <h4 style="margin: 0 0 8px 0; color: #2563eb; font-weight: bold;">📍 Route Information</h4>
               <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; font-size: 14px;">
                 <div style="text-align: center; background: #f3f4f6; padding: 6px; border-radius: 4px;">
-                  <div style="font-weight: bold; color: #f97316;">${driverVehicleType.toUpperCase()}</div>
+                  <div style="font-weight: bold; color: #000000;">${driverVehicleType.toUpperCase()}</div>
                   <div style="font-size: 11px; color: #6b7280;">Vehicle</div>
                 </div>
                 <div style="text-align: center; background: #f3f4f6; padding: 6px; border-radius: 4px;">
