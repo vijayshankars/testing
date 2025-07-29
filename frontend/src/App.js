@@ -554,6 +554,9 @@ const DriverDashboard = () => {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [selectedRideForCancel, setSelectedRideForCancel] = useState(null);
   const [cancelReason, setCancelReason] = useState('');
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [selectedRideForReject, setSelectedRideForReject] = useState(null);
+  const [rejectReason, setRejectReason] = useState('');
   
   const { user, logout } = useAuth();
   const { getUserLocation } = useGoogleMaps();
