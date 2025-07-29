@@ -630,9 +630,13 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Driver Dashboard Testing"
+    - "Driver Dashboard JavaScript Runtime Error Fix"
+    - "Driver Ride Cancellation with Reasons" 
+    - "Driver Ride History Display"
+    - "Database Collection Consistency Fix"
   stuck_tasks:
-    - "Driver Dashboard Testing"
+    - "Driver Dashboard JavaScript Runtime Error Fix"
+    - "Driver Ride History Display"
   test_all: false
   test_priority: "stuck_first"
 
