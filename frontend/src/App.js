@@ -770,6 +770,31 @@ const DriverDashboard = () => {
     }
   };
 
+  const rejectRide = async (rideId) => {
+    if (!confirm('Are you sure you want to reject this ride request? It will be removed from your list.')) {
+      return;
+    }
+
+    try {
+      await axios.post(`${API}/driver/reject-ride/${rideId}`);
+      
+      // Remove the rejected ride from the list immediately
+      setRideRequests(prevRequests => 
+        prevRequests.filter(request => request.id !== rideId)
+      );
+      
+      alert('Ride request rejected successfully.');
+      
+    } catch (error) {
+      console.error('Error rejecting ride:', error);
+      const errorMessage = error.response?.data?.detail || 'Failed to reject ride';
+      alert(`Error: ${errorMessage}`);
+      
+      // Refresh the list in case of error
+      fetchRideRequests();
+    }
+  };
+
   const fetchAcceptedRides = async () => {
     try {
       const response = await axios.get(`${API}/driver/ride-history?status=accepted`);
