@@ -354,38 +354,7 @@ const useDriverNotifications = (isAvailable, rideRequests) => {
 
   return { notificationPermission };
 };
-const DriverDashboard = () => {
-  const [driverProfile, setDriverProfile] = useState(null);
-  const [showProfileForm, setShowProfileForm] = useState(false);
-  const [rideRequests, setRideRequests] = useState([]);
-  const [acceptedRides, setAcceptedRides] = useState([]);
-  const [rideHistory, setRideHistory] = useState([]);
-  const [showHistory, setShowHistory] = useState(false);
-  const [isAvailable, setIsAvailable] = useState(false);
-  const [currentLocation, setCurrentLocation] = useState(null);
-  const [profileForm, setProfileForm] = useState({
-    vehicle_type: '',
-    vehicle_number: '',
-    license_number: '',
-    license_document: null,
-    registration_document: null
-  });
-  const [flashEffect, setFlashEffect] = useState(false);
-  const [otpInput, setOtpInput] = useState('');
-  const [selectedRideForOTP, setSelectedRideForOTP] = useState(null);
-  const [isVerifyingLicense, setIsVerifyingLicense] = useState(false);
-  const [licenseVerificationStatus, setLicenseVerificationStatus] = useState(null);
-  const [isVerifyingVehicle, setIsVerifyingVehicle] = useState(false);
-  const [vehicleVerificationStatus, setVehicleVerificationStatus] = useState(null);
-  const [showCancelModal, setShowCancelModal] = useState(false);
-  const [selectedRideForCancel, setSelectedRideForCancel] = useState(null);
-  const [cancelReason, setCancelReason] = useState('');
-  const [showRejectModal, setShowRejectModal] = useState(false);
-  const [selectedRideForReject, setSelectedRideForReject] = useState(null);
-  const [rejectReason, setRejectReason] = useState('');
-  
-  const { user, logout } = useAuth();
-  const { getUserLocation } = useGoogleMaps();
+// Rider Dashboard Component
   
   const verifyLicenseWithVahan = async () => {
     if (!profileForm.license_number) {
