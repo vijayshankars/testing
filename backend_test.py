@@ -2698,6 +2698,9 @@ def main():
     # Test mobile number search functionality in admin dashboard
     test_mobile_number_search_functionality(result)
     
+    # Test driver ride rejection functionality
+    test_driver_ride_rejection_functionality(result)
+    
     # Print summary
     result.summary()
     
