@@ -147,6 +147,382 @@ def test_basic_health_check(result: TestResult):
     except Exception as e:
         result.log_failure("GET /api/maps-config", str(e))
 
+def test_driver_ride_rejection_functionality(result: TestResult):
+    """Test driver ride rejection functionality comprehensively"""
+    print(f"\n{'='*60}")
+    print("DRIVER RIDE REJECTION FUNCTIONALITY TESTING")
+    print(f"{'='*60}")
+    
+    global driver_token, rider_token, driver_id, rider_id
+    
+    # Chennai locations for testing
+    chennai_locations = {
+        "pickup": {"lat": 13.0827, "lng": 80.2707, "address": "Chennai Central Railway Station"},
+        "drop": {"lat": 13.0878, "lng": 80.2785, "address": "T. Nagar, Chennai"}
+    }
+    
+    # Step 1: Create test driver user with mobile OTP authentication
+    print("\n1. Creating test driver user with mobile OTP authentication...")
+    driver_phone = "+91 9876543211"
+    
+    try:
+        # Send OTP for driver
+        otp_response = make_request("POST", "/auth/send-otp", {
+            "phone_number": driver_phone,
+            "user_type": "driver"
+        })
+        
+        if otp_response.status_code == 200:
+            otp_data = otp_response.json()
+            demo_otp = otp_data.get("demo_otp", "123456")
+            
+            # Verify OTP and create driver
+            verify_response = make_request("POST", "/auth/verify-otp", {
+                "phone_number": driver_phone,
+                "otp_code": demo_otp,
+                "user_type": "driver",
+                "name": "Test Driver Chennai"
+            })
+            
+            if verify_response.status_code == 200:
+                verify_data = verify_response.json()
+                driver_token = verify_data["token"]
+                driver_id = verify_data["user_data"]["id"]
+                result.log_success("Driver user created with mobile OTP authentication")
+            else:
+                result.log_failure("Driver OTP verification", f"Status {verify_response.status_code}: {verify_response.text}")
+                return
+        else:
+            result.log_failure("Driver OTP sending", f"Status {otp_response.status_code}: {otp_response.text}")
+            return
+    except Exception as e:
+        result.log_failure("Driver mobile OTP authentication", str(e))
+        return
+    
+    # Step 2: Create driver profile
+    print("\n2. Creating driver profile...")
+    try:
+        profile_response = make_request("POST", "/driver/profile", {
+            "vehicle_type": "auto",
+            "vehicle_number": "TN01AB1234",
+            "license_number": "DL1234567890"
+        }, headers=get_auth_headers(driver_token))
+        
+        if profile_response.status_code == 200:
+            result.log_success("Driver profile created successfully")
+        else:
+            result.log_failure("Driver profile creation", f"Status {profile_response.status_code}: {profile_response.text}")
+            return
+    except Exception as e:
+        result.log_failure("Driver profile creation", str(e))
+        return
+    
+    # Step 3: Set driver location in Chennai
+    print("\n3. Setting driver location in Chennai...")
+    try:
+        location_response = make_request("PUT", "/driver/location", {
+            "lat": 13.0827,
+            "lng": 80.2707
+        }, headers=get_auth_headers(driver_token))
+        
+        if location_response.status_code == 200:
+            result.log_success("Driver location set to Chennai coordinates")
+        else:
+            result.log_failure("Driver location update", f"Status {location_response.status_code}: {location_response.text}")
+            return
+    except Exception as e:
+        result.log_failure("Driver location update", str(e))
+        return
+    
+    # Step 4: Create test rider user with mobile OTP authentication
+    print("\n4. Creating test rider user with mobile OTP authentication...")
+    rider_phone = "+91 9876543210"
+    
+    try:
+        # Send OTP for rider
+        otp_response = make_request("POST", "/auth/send-otp", {
+            "phone_number": rider_phone,
+            "user_type": "rider"
+        })
+        
+        if otp_response.status_code == 200:
+            otp_data = otp_response.json()
+            demo_otp = otp_data.get("demo_otp", "123456")
+            
+            # Verify OTP and create rider
+            verify_response = make_request("POST", "/auth/verify-otp", {
+                "phone_number": rider_phone,
+                "otp_code": demo_otp,
+                "user_type": "rider",
+                "name": "Test Rider Chennai"
+            })
+            
+            if verify_response.status_code == 200:
+                verify_data = verify_response.json()
+                rider_token = verify_data["token"]
+                rider_id = verify_data["user_data"]["id"]
+                result.log_success("Rider user created with mobile OTP authentication")
+            else:
+                result.log_failure("Rider OTP verification", f"Status {verify_response.status_code}: {verify_response.text}")
+                return
+        else:
+            result.log_failure("Rider OTP sending", f"Status {otp_response.status_code}: {otp_response.text}")
+            return
+    except Exception as e:
+        result.log_failure("Rider mobile OTP authentication", str(e))
+        return
+    
+    # Step 5: Create ride request with Chennai locations
+    print("\n5. Creating ride request with Chennai locations...")
+    try:
+        ride_response = make_request("POST", "/rider/request-ride", {
+            "pickup_location": chennai_locations["pickup"],
+            "drop_location": chennai_locations["drop"],
+            "estimated_distance": 2.5,
+            "estimated_fare": 50.0
+        }, headers=get_auth_headers(rider_token))
+        
+        if ride_response.status_code == 200:
+            ride_data = ride_response.json()
+            ride_id = ride_data["id"]
+            result.log_success("Ride request created with Chennai locations")
+        else:
+            result.log_failure("Ride request creation", f"Status {ride_response.status_code}: {ride_response.text}")
+            return
+    except Exception as e:
+        result.log_failure("Ride request creation", str(e))
+        return
+    
+    # Step 6: Verify driver can see the ride request initially
+    print("\n6. Verifying driver can see ride request initially...")
+    try:
+        requests_response = make_request("GET", "/driver/ride-requests", 
+                                       headers=get_auth_headers(driver_token))
+        
+        if requests_response.status_code == 200:
+            requests_data = requests_response.json()
+            ride_found = any(r["id"] == ride_id for r in requests_data)
+            if ride_found:
+                result.log_success("Driver can see ride request in initial list")
+            else:
+                result.log_failure("Initial ride visibility", "Ride not found in driver's request list")
+                return
+        else:
+            result.log_failure("Get ride requests", f"Status {requests_response.status_code}: {requests_response.text}")
+            return
+    except Exception as e:
+        result.log_failure("Get ride requests", str(e))
+        return
+    
+    # Step 7: Test driver rejecting the ride request
+    print("\n7. Testing driver ride rejection...")
+    try:
+        reject_response = make_request("POST", f"/driver/reject-ride/{ride_id}", 
+                                     headers=get_auth_headers(driver_token))
+        
+        if reject_response.status_code == 200:
+            reject_data = reject_response.json()
+            if reject_data.get("status") == "rejected":
+                result.log_success("Driver successfully rejected ride request")
+            else:
+                result.log_failure("Ride rejection response", f"Unexpected response: {reject_data}")
+                return
+        else:
+            result.log_failure("Driver ride rejection", f"Status {reject_response.status_code}: {reject_response.text}")
+            return
+    except Exception as e:
+        result.log_failure("Driver ride rejection", str(e))
+        return
+    
+    # Step 8: Verify rejection is recorded in database (by checking filtered results)
+    print("\n8. Verifying rejection is recorded and ride is filtered out...")
+    try:
+        requests_response = make_request("GET", "/driver/ride-requests", 
+                                       headers=get_auth_headers(driver_token))
+        
+        if requests_response.status_code == 200:
+            requests_data = requests_response.json()
+            ride_found = any(r["id"] == ride_id for r in requests_data)
+            if not ride_found:
+                result.log_success("Rejected ride no longer appears in driver's request list")
+            else:
+                result.log_failure("Ride filtering after rejection", "Rejected ride still appears in request list")
+        else:
+            result.log_failure("Get ride requests after rejection", f"Status {requests_response.status_code}: {requests_response.text}")
+    except Exception as e:
+        result.log_failure("Get ride requests after rejection", str(e))
+    
+    # Step 9: Create second driver to test that other drivers can still see the ride
+    print("\n9. Creating second driver to test ride visibility for other drivers...")
+    driver2_phone = "+91 9876543212"
+    driver2_token = None
+    
+    try:
+        # Send OTP for second driver
+        otp_response = make_request("POST", "/auth/send-otp", {
+            "phone_number": driver2_phone,
+            "user_type": "driver"
+        })
+        
+        if otp_response.status_code == 200:
+            otp_data = otp_response.json()
+            demo_otp = otp_data.get("demo_otp", "123456")
+            
+            # Verify OTP and create second driver
+            verify_response = make_request("POST", "/auth/verify-otp", {
+                "phone_number": driver2_phone,
+                "otp_code": demo_otp,
+                "user_type": "driver",
+                "name": "Test Driver 2 Chennai"
+            })
+            
+            if verify_response.status_code == 200:
+                verify_data = verify_response.json()
+                driver2_token = verify_data["token"]
+                
+                # Create driver profile for second driver
+                profile_response = make_request("POST", "/driver/profile", {
+                    "vehicle_type": "car",
+                    "vehicle_number": "TN02CD5678",
+                    "license_number": "DL9876543210"
+                }, headers=get_auth_headers(driver2_token))
+                
+                if profile_response.status_code == 200:
+                    # Set location for second driver
+                    location_response = make_request("PUT", "/driver/location", {
+                        "lat": 13.0878,
+                        "lng": 80.2785
+                    }, headers=get_auth_headers(driver2_token))
+                    
+                    if location_response.status_code == 200:
+                        result.log_success("Second driver created and configured")
+                    else:
+                        result.log_failure("Second driver location", f"Status {location_response.status_code}")
+                        return
+                else:
+                    result.log_failure("Second driver profile", f"Status {profile_response.status_code}")
+                    return
+            else:
+                result.log_failure("Second driver OTP verification", f"Status {verify_response.status_code}")
+                return
+        else:
+            result.log_failure("Second driver OTP sending", f"Status {otp_response.status_code}")
+            return
+    except Exception as e:
+        result.log_failure("Second driver creation", str(e))
+        return
+    
+    # Step 10: Verify second driver can still see the ride request
+    print("\n10. Verifying second driver can still see the ride request...")
+    try:
+        requests_response = make_request("GET", "/driver/ride-requests", 
+                                       headers=get_auth_headers(driver2_token))
+        
+        if requests_response.status_code == 200:
+            requests_data = requests_response.json()
+            ride_found = any(r["id"] == ride_id for r in requests_data)
+            if ride_found:
+                result.log_success("Other drivers can still see ride request after one driver's rejection")
+            else:
+                result.log_failure("Ride visibility for other drivers", "Ride not visible to other drivers")
+        else:
+            result.log_failure("Get ride requests for second driver", f"Status {requests_response.status_code}: {requests_response.text}")
+    except Exception as e:
+        result.log_failure("Get ride requests for second driver", str(e))
+    
+    # Step 11: Test edge cases
+    print("\n11. Testing edge cases...")
+    
+    # Test rejecting non-existent ride
+    try:
+        fake_ride_id = "non-existent-ride-id"
+        reject_response = make_request("POST", f"/driver/reject-ride/{fake_ride_id}", 
+                                     headers=get_auth_headers(driver_token))
+        
+        if reject_response.status_code == 404:
+            result.log_success("Non-existent ride rejection properly returns 404")
+        else:
+            result.log_failure("Non-existent ride rejection", f"Expected 404, got {reject_response.status_code}")
+    except Exception as e:
+        result.log_failure("Non-existent ride rejection test", str(e))
+    
+    # Test unauthorized access (no token)
+    try:
+        reject_response = make_request("POST", f"/driver/reject-ride/{ride_id}")
+        
+        if reject_response.status_code == 403:
+            result.log_success("Unauthorized ride rejection properly returns 403")
+        else:
+            result.log_failure("Unauthorized ride rejection", f"Expected 403, got {reject_response.status_code}")
+    except Exception as e:
+        result.log_failure("Unauthorized ride rejection test", str(e))
+    
+    # Step 12: Test that first driver cannot reject the same ride again
+    print("\n12. Testing double rejection prevention...")
+    try:
+        reject_response = make_request("POST", f"/driver/reject-ride/{ride_id}", 
+                                     headers=get_auth_headers(driver_token))
+        
+        if reject_response.status_code == 404:
+            result.log_success("Double rejection properly prevented (404 for already rejected ride)")
+        else:
+            result.log_failure("Double rejection prevention", f"Expected 404, got {reject_response.status_code}")
+    except Exception as e:
+        result.log_failure("Double rejection prevention test", str(e))
+    
+    # Step 13: Test accepting ride after rejection by another driver
+    print("\n13. Testing ride acceptance by second driver after first driver's rejection...")
+    try:
+        accept_response = make_request("POST", f"/driver/accept-ride/{ride_id}", 
+                                     headers=get_auth_headers(driver2_token))
+        
+        if accept_response.status_code == 200:
+            accept_data = accept_response.json()
+            if "ride_otp" in accept_data:
+                result.log_success("Second driver can accept ride after first driver's rejection")
+            else:
+                result.log_failure("Ride acceptance after rejection", f"Missing ride_otp in response: {accept_data}")
+        else:
+            result.log_failure("Ride acceptance after rejection", f"Status {accept_response.status_code}: {accept_response.text}")
+    except Exception as e:
+        result.log_failure("Ride acceptance after rejection", str(e))
+    
+    # Step 14: Verify distance-based filtering still works correctly
+    print("\n14. Testing distance-based filtering with rejection system...")
+    
+    # Create a ride far from drivers (outside 25km radius)
+    far_location = {"lat": 12.9716, "lng": 77.5946, "address": "Bangalore (far from Chennai)"}
+    
+    try:
+        far_ride_response = make_request("POST", "/rider/request-ride", {
+            "pickup_location": far_location,
+            "drop_location": chennai_locations["drop"],
+            "estimated_distance": 350.0,
+            "estimated_fare": 1000.0
+        }, headers=get_auth_headers(rider_token))
+        
+        if far_ride_response.status_code == 200:
+            far_ride_data = far_ride_response.json()
+            far_ride_id = far_ride_data["id"]
+            
+            # Check if Chennai drivers can see this far ride (they shouldn't)
+            requests_response = make_request("GET", "/driver/ride-requests", 
+                                           headers=get_auth_headers(driver_token))
+            
+            if requests_response.status_code == 200:
+                requests_data = requests_response.json()
+                far_ride_found = any(r["id"] == far_ride_id for r in requests_data)
+                if not far_ride_found:
+                    result.log_success("Distance-based filtering works correctly with rejection system")
+                else:
+                    result.log_failure("Distance-based filtering", "Far ride incorrectly appears in nearby requests")
+            else:
+                result.log_failure("Distance filtering test", f"Status {requests_response.status_code}")
+        else:
+            result.log_failure("Far ride creation for distance test", f"Status {far_ride_response.status_code}")
+    except Exception as e:
+        result.log_failure("Distance-based filtering test", str(e))
+
 def test_vahan_vehicle_verification_system(result: TestResult):
     """Test VAHAN vehicle verification integration"""
     print(f"\n{'='*60}")
