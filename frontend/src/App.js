@@ -1819,7 +1819,7 @@ const DriverDashboard = () => {
                   </div>
                 )}
               </div>
-            </div>
+            )}
             
           </div>
         </div>
