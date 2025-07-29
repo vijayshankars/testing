@@ -1416,6 +1416,75 @@ async def apply_discount_code(request: ApplyDiscountRequest, current_user: dict 
             "message": "Failed to apply discount code"
         }
 
+@api_router.get("/rider/nearby-drivers")
+async def get_nearby_available_drivers(
+    lat: float,
+    lng: float,
+    radius: int = 20,
+    current_user: dict = Depends(get_current_user)
+):
+    """Get all available drivers within specified radius with their vehicle types and locations"""
+    if current_user["user_type"] != "rider":
+        raise HTTPException(status_code=403, detail="Only riders can view nearby drivers")
+    
+    try:
+        # Get all driver profiles with their current locations
+        driver_profiles = await db.driver_profiles.find({
+            "is_available": True,
+            "current_location": {"$exists": True, "$ne": None}
+        }).to_list(1000)
+        
+        nearby_drivers = []
+        rider_location = {"lat": lat, "lng": lng}
+        
+        for driver in driver_profiles:
+            # Skip drivers without valid locations
+            if not driver.get("current_location") or \
+               not isinstance(driver["current_location"].get("lat"), (int, float)) or \
+               not isinstance(driver["current_location"].get("lng"), (int, float)):
+                continue
+                
+            # Calculate distance
+            distance = calculate_distance(rider_location, driver["current_location"])
+            
+            # Include drivers within radius
+            if distance <= radius:
+                # Get driver user info
+                driver_user = await db.users.find_one({"id": driver["user_id"]})
+                if not driver_user:
+                    continue
+                
+                nearby_drivers.append({
+                    "driver_id": driver["user_id"],
+                    "name": driver_user.get("name", "Unknown Driver"),
+                    "phone": driver_user.get("phone", ""),
+                    "vehicle_type": driver.get("vehicle_type", "car"),
+                    "vehicle_number": driver.get("vehicle_number", ""),
+                    "current_location": {
+                        "lat": driver["current_location"]["lat"],
+                        "lng": driver["current_location"]["lng"]
+                    },
+                    "distance_km": round(distance, 2),
+                    "rating": driver.get("rating", 4.0),
+                    "per_km_rate": driver.get("per_km_rate", 10),
+                    "is_available": driver.get("is_available", True),
+                    "last_updated": driver.get("updated_at", datetime.utcnow()).isoformat() if driver.get("updated_at") else datetime.utcnow().isoformat()
+                })
+        
+        # Sort by distance (closest first)
+        nearby_drivers.sort(key=lambda x: x["distance_km"])
+        
+        return {
+            "drivers": nearby_drivers,
+            "count": len(nearby_drivers),
+            "search_radius_km": radius,
+            "rider_location": rider_location
+        }
+        
+    except Exception as e:
+        print(f"Error getting nearby drivers: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to fetch nearby drivers")
+
 @api_router.get("/rider/available-discounts")
 async def get_available_discounts(current_user: dict = Depends(get_current_user)):
     """Get available discount codes for the rider"""
