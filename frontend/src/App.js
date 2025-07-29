@@ -935,7 +935,7 @@ const DriverDashboard = () => {
       const pickupInfoWindow = new window.google.maps.InfoWindow({
         content: `
           <div style="padding: 12px; min-width: 200px;">
-            <h3 style="margin: 0 0 8px 0; color: #f97316; font-weight: bold; display: flex; align-items: center;">
+            <h3 style="margin: 0 0 8px 0; color: #000000; font-weight: bold; display: flex; align-items: center;">
               🚗 Driver Location
             </h3>
             <div style="background: #f3f4f6; padding: 8px; border-radius: 6px; margin-bottom: 8px;">
