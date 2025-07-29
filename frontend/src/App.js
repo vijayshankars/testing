@@ -1825,7 +1825,8 @@ const DriverDashboard = () => {
           </div>
         </div>
       </div>
-      
+      </div>
+
       {/* OTP Verification Modal */}
       {selectedRideForOTP && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
