@@ -27,9 +27,9 @@ CHENNAI_LOCATIONS = {
     "drop3": {"lat": 13.0827, "lng": 80.2707, "address": "Chennai Central"}
 }
 
-# Test mobile number as requested
-TEST_DRIVER_PHONE = "+91 9876543210"
-TEST_RIDER_PHONE = "+91 9876543211"
+# Test mobile number as requested (using different number for driver to avoid conflicts)
+TEST_DRIVER_PHONE = "+91 9876543213"
+TEST_RIDER_PHONE = "+91 9876543214"
 
 class TestResult:
     def __init__(self):
