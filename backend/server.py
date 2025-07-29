@@ -1029,6 +1029,41 @@ async def complete_ride(
     
     return {"message": "Ride completed successfully", "status": "completed"}
 
+@api_router.post("/driver/cancel-ride")
+async def driver_cancel_ride(
+    cancellation: RideCancellationRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    if current_user["user_type"] != "driver":
+        raise HTTPException(status_code=403, detail="Only drivers can cancel their rides")
+    
+    # Find the ride assigned to this driver
+    ride = await db.ride_requests.find_one({
+        "id": cancellation.ride_id,
+        "driver_id": current_user["id"],
+        "status": {"$in": ["accepted", "in_progress"]}
+    })
+    
+    if not ride:
+        raise HTTPException(status_code=404, detail="Ride not found or cannot be cancelled")
+    
+    # Update ride status to cancelled
+    result = await db.ride_requests.update_one(
+        {"id": cancellation.ride_id},
+        {
+            "$set": {
+                "status": "cancelled",
+                "cancelled_at": datetime.utcnow(),
+                "cancellation_reason": f"Driver cancelled: {cancellation.reason}"
+            }
+        }
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=400, detail="Failed to cancel ride")
+    
+    return {"message": "Ride cancelled successfully", "status": "cancelled"}
+
 # Rider Routes
 @api_router.post("/rider/cancel-ride")
 async def cancel_ride(
