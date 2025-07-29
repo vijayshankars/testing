@@ -1365,12 +1365,20 @@ const DriverDashboard = () => {
                       </div>
                       
                       <div className="ml-4">
-                        <button
-                          onClick={() => acceptRide(request.id)}
-                          className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors font-medium shadow-sm"
-                        >
-                          Accept Ride
-                        </button>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => acceptRide(request.id)}
+                            className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors font-medium shadow-sm"
+                          >
+                            Accept Ride
+                          </button>
+                          <button
+                            onClick={() => rejectRide(request.id)}
+                            className="bg-red-600 text-white px-4 py-3 rounded-lg hover:bg-red-700 transition-colors font-medium shadow-sm"
+                          >
+                            Reject
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
