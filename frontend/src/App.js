@@ -1193,172 +1193,186 @@ const DriverDashboard = () => {
           {/* Ride Requests and Active Rides */}
           <div className="lg:col-span-2 space-y-6">
             
-            {/* Accepted Rides */}
+            {/* Current Ride with Google Maps */}
             {acceptedRides.length > 0 && (
-              <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-lg font-semibold mb-4 text-green-600">Your Active Rides</h2>
-                <div className="space-y-4">
-                  {acceptedRides.map((ride) => (
-                    <div key={ride.id} className="border border-green-200 rounded-lg p-4 bg-green-50">
-                      <div className="flex justify-between items-start mb-3">
-                        <div className="flex-1">
-                          <div className="flex items-center mb-2">
-                            <MapPin className="w-4 h-4 text-green-600 mr-2" />
-                            <span className="text-sm text-gray-600">From:</span>
-                            <span className="ml-2 font-medium">{ride.pickup_location.address}</span>
-                          </div>
-                          <div className="flex items-center mb-3">
-                            <Navigation className="w-4 h-4 text-red-600 mr-2" />
-                            <span className="text-sm text-gray-600">To:</span>
-                            <span className="ml-2 font-medium">{ride.drop_location.address}</span>
-                          </div>
-                          
-                          <div className="grid grid-cols-3 gap-4 text-sm mb-3">
-                            <div className="bg-white rounded p-2 text-center">
-                              <div className="font-semibold text-green-600">₹{ride.estimated_fare}</div>
-                              <div className="text-gray-600 text-xs">Fare</div>
-                            </div>
-                            <div className="bg-white rounded p-2 text-center">
-                              <div className="font-semibold text-blue-600">{ride.estimated_distance.toFixed(1)} km</div>
-                              <div className="text-gray-600 text-xs">Distance</div>
-                            </div>
-                            <div className="bg-white rounded p-2 text-center">
-                              <div className="font-semibold text-purple-600">
-                                {ride.ride_otp || '----'}
-                              </div>
-                              <div className="text-gray-600 text-xs">Ride OTP</div>
-                            </div>
-                          </div>
-
-                          {ride.rider_info && (
-                            <div className="text-sm text-gray-600 bg-white rounded p-2">
-                              <div><strong>Rider:</strong> {ride.rider_info.name}</div>
-                              <div><strong>Phone:</strong> {ride.rider_info.phone}</div>
-                            </div>
-                          )}
-
-                          {/* Google Map for In-Progress Rides */}
-                          {ride.status === 'in_progress' && (
-                            <div className="mt-3 bg-white rounded-lg p-3 border">
-                              <h4 className="text-sm font-medium text-gray-700 mb-2">Route Map</h4>
-                              <div 
-                                id={`map-${ride.id}`}
-                                className="w-full h-48 rounded-lg bg-gray-100 flex items-center justify-center"
-                                ref={(el) => {
-                                  if (el && ride.status === 'in_progress') {
-                                    // Initialize map for this ride
-                                    setTimeout(() => {
-                                      if (window.google && window.google.maps) {
-                                        const map = new window.google.maps.Map(el, {
-                                          zoom: 13,
-                                          center: ride.pickup_location,
-                                          mapTypeId: 'roadmap'
-                                        });
-
-                                        // Add pickup marker
-                                        new window.google.maps.Marker({
-                                          position: ride.pickup_location,
-                                          map: map,
-                                          title: 'Pickup Location',
-                                          icon: {
-                                            url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-                                              <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-                                                <circle cx="16" cy="16" r="12" fill="#22c55e" stroke="#ffffff" stroke-width="3"/>
-                                                <text x="16" y="20" text-anchor="middle" fill="white" font-size="12" font-weight="bold">P</text>
-                                              </svg>
-                                            `),
-                                            scaledSize: new window.google.maps.Size(32, 32),
-                                            anchor: new window.google.maps.Point(16, 16)
-                                          }
-                                        });
-
-                                        // Add drop marker
-                                        new window.google.maps.Marker({
-                                          position: ride.drop_location,
-                                          map: map,
-                                          title: 'Drop Location',
-                                          icon: {
-                                            url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-                                              <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-                                                <circle cx="16" cy="16" r="12" fill="#ef4444" stroke="#ffffff" stroke-width="3"/>
-                                                <text x="16" y="20" text-anchor="middle" fill="white" font-size="12" font-weight="bold">D</text>
-                                              </svg>
-                                            `),
-                                            scaledSize: new window.google.maps.Size(32, 32),
-                                            anchor: new window.google.maps.Point(16, 16)
-                                          }
-                                        });
-
-                                        // Add route
-                                        const directionsService = new window.google.maps.DirectionsService();
-                                        const directionsRenderer = new window.google.maps.DirectionsRenderer({
-                                          suppressMarkers: true,
-                                          polylineOptions: {
-                                            strokeColor: '#3b82f6',
-                                            strokeWeight: 4
-                                          }
-                                        });
-                                        directionsRenderer.setMap(map);
-
-                                        directionsService.route({
-                                          origin: ride.pickup_location,
-                                          destination: ride.drop_location,
-                                          travelMode: window.google.maps.TravelMode.DRIVING
-                                        }, (result, status) => {
-                                          if (status === 'OK') {
-                                            directionsRenderer.setDirections(result);
-                                          }
-                                        });
-                                      }
-                                    }, 100);
-                                  }
-                                }}
-                              >
-                                <div className="text-gray-500 text-sm">Loading map...</div>
-                              </div>
-                            </div>
-                          )}
+              <div className="bg-white rounded-lg shadow-lg p-6">
+                <h2 className="text-xl font-bold mb-6 text-blue-600 flex items-center">
+                  <Navigation className="w-6 h-6 mr-3" />
+                  Current Ride - Live Navigation
+                </h2>
+                
+                {acceptedRides.map((ride) => (
+                  <div key={ride.id} className="space-y-6">
+                    
+                    {/* Ride Status Banner */}
+                    <div className={`p-4 rounded-lg border-l-4 ${
+                      ride.status === 'accepted' 
+                        ? 'bg-yellow-50 border-yellow-400' 
+                        : 'bg-green-50 border-green-400'
+                    }`}>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className={`font-semibold ${
+                            ride.status === 'accepted' ? 'text-yellow-800' : 'text-green-800'
+                          }`}>
+                            {ride.status === 'accepted' ? '🟡 Waiting for Rider' : '🟢 Ride in Progress'}
+                          </h3>
+                          <p className={`text-sm ${
+                            ride.status === 'accepted' ? 'text-yellow-600' : 'text-green-600'
+                          }`}>
+                            {ride.status === 'accepted' 
+                              ? 'Please verify the OTP with the rider to start the trip' 
+                              : 'Navigate to destination using the map below'}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-2xl font-bold text-blue-600">₹{ride.estimated_fare}</div>
+                          <div className="text-sm text-gray-500">{ride.estimated_distance?.toFixed(1)} km</div>
                         </div>
                       </div>
+                    </div>
 
-                      <div className="flex gap-2">
-                        {ride.status === 'accepted' && (
-                          <>
-                            <button
-                              onClick={() => setSelectedRideForOTP(ride)}
-                              className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
-                            >
-                              Verify OTP & Start
-                            </button>
-                            <button
-                              onClick={() => cancelRide(ride.id)}
-                              className="bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors"
-                            >
-                              Cancel
-                            </button>
-                          </>
-                        )}
-                        
-                        {ride.status === 'in_progress' && (
-                          <>
-                            <button
-                              onClick={() => completeRide(ride.id)}
-                              className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors"
-                            >
-                              Complete Ride
-                            </button>
-                            <button
-                              onClick={() => cancelRide(ride.id)}
-                              className="bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors"
-                            >
-                              Cancel
-                            </button>
-                          </>
-                        )}
+                    {/* Route Information */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="bg-gradient-to-r from-green-50 to-green-100 p-4 rounded-lg border border-green-200">
+                        <div className="flex items-center mb-2">
+                          <div className="w-3 h-3 bg-green-500 rounded-full mr-3"></div>
+                          <span className="text-sm font-medium text-green-700">PICKUP</span>
+                        </div>
+                        <p className="text-green-800 font-medium">{ride.pickup_location.address}</p>
+                        <p className="text-xs text-green-600 mt-1">
+                          {ride.pickup_location.lat.toFixed(4)}, {ride.pickup_location.lng.toFixed(4)}
+                        </p>
+                      </div>
+                      
+                      <div className="bg-gradient-to-r from-red-50 to-red-100 p-4 rounded-lg border border-red-200">
+                        <div className="flex items-center mb-2">
+                          <div className="w-3 h-3 bg-red-500 rounded-full mr-3"></div>
+                          <span className="text-sm font-medium text-red-700">DESTINATION</span>
+                        </div>
+                        <p className="text-red-800 font-medium">{ride.drop_location.address}</p>
+                        <p className="text-xs text-red-600 mt-1">
+                          {ride.drop_location.lat.toFixed(4)}, {ride.drop_location.lng.toFixed(4)}
+                        </p>
                       </div>
                     </div>
-                  ))}
-                </div>
+
+                    {/* Enhanced Google Maps */}
+                    <div className="bg-gray-50 rounded-lg p-4 border">
+                      <div className="flex items-center justify-between mb-4">
+                        <h4 className="font-semibold text-gray-800 flex items-center">
+                          🗺️ Live Route Navigation
+                        </h4>
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => {
+                              // Refresh map
+                              const mapElement = document.getElementById(`current-ride-map-${ride.id}`);
+                              if (mapElement) {
+                                mapElement.innerHTML = '<div class="flex items-center justify-center h-80 text-gray-500">🔄 Refreshing map...</div>';
+                                setTimeout(() => initializeCurrentRideMap(ride), 500);
+                              }
+                            }}
+                            className="bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-1 rounded text-sm transition-colors"
+                          >
+                            🔄 Refresh
+                          </button>
+                          <button
+                            onClick={() => {
+                              // Open in Google Maps
+                              const url = `https://www.google.com/maps/dir/${ride.pickup_location.lat},${ride.pickup_location.lng}/${ride.drop_location.lat},${ride.drop_location.lng}`;
+                              window.open(url, '_blank');
+                            }}
+                            className="bg-green-100 hover:bg-green-200 text-green-700 px-3 py-1 rounded text-sm transition-colors"
+                          >
+                            📱 Open in Maps
+                          </button>
+                        </div>
+                      </div>
+                      
+                      <div 
+                        id={`current-ride-map-${ride.id}`}
+                        className="w-full h-80 rounded-lg bg-gray-100 flex items-center justify-center border"
+                        ref={(el) => {
+                          if (el && ride) {
+                            setTimeout(() => initializeCurrentRideMap(ride), 100);
+                          }
+                        }}
+                      >
+                        <div className="text-gray-500 text-center">
+                          <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-2"></div>
+                          <div>Loading enhanced navigation map...</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Rider Information */}
+                    {ride.rider_info && (
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <h4 className="font-semibold text-blue-800 mb-2 flex items-center">
+                          👤 Rider Information
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                          <div>
+                            <span className="font-medium text-blue-700">Name:</span>
+                            <span className="ml-2 text-blue-800">{ride.rider_info.name}</span>
+                          </div>
+                          <div>
+                            <span className="font-medium text-blue-700">Phone:</span>
+                            <a href={`tel:${ride.rider_info.phone}`} className="ml-2 text-blue-600 hover:text-blue-800 underline">
+                              {ride.rider_info.phone}
+                            </a>
+                          </div>
+                          <div>
+                            <span className="font-medium text-blue-700">OTP:</span>
+                            <span className="ml-2 bg-purple-100 text-purple-800 px-2 py-1 rounded font-bold">
+                              {ride.ride_otp || '----'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-3">
+                      {ride.status === 'accepted' && (
+                        <>
+                          <button
+                            onClick={() => setSelectedRideForOTP(ride)}
+                            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg transition-colors font-medium flex items-center justify-center"
+                          >
+                            <CheckCircle className="w-5 h-5 mr-2" />
+                            Verify OTP & Start Journey
+                          </button>
+                          <button
+                            onClick={() => cancelRide(ride.id)}
+                            className="bg-red-600 hover:bg-red-700 text-white py-3 px-4 rounded-lg transition-colors font-medium"
+                          >
+                            Cancel
+                          </button>
+                        </>
+                      )}
+                      
+                      {ride.status === 'in_progress' && (
+                        <>
+                          <button
+                            onClick={() => completeRide(ride.id)}
+                            className="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-lg transition-colors font-medium flex items-center justify-center"
+                          >
+                            <CheckCircle className="w-5 h-5 mr-2" />
+                            Complete Journey
+                          </button>
+                          <button
+                            onClick={() => cancelRide(ride.id)}
+                            className="bg-red-600 hover:bg-red-700 text-white py-3 px-4 rounded-lg transition-colors font-medium"
+                          >
+                            Cancel
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
 
