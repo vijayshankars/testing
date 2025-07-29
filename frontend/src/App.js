@@ -2185,7 +2185,6 @@ const DriverDashboard = () => {
         </div>
       )}
 
-    </div>
     </>
   );
 };
