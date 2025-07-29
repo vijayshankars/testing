@@ -2218,6 +2218,206 @@ const RiderDashboard = () => {
     setAppliedDiscount(null);
   };
 
+  // Live Driver Map Functions
+  const fetchNearbyDrivers = async () => {
+    if (!currentLocation) {
+      console.log('No current location available for fetching drivers');
+      return;
+    }
+
+    setIsLoadingDrivers(true);
+    try {
+      const response = await axios.get(`${API}/rider/nearby-drivers`, {
+        params: {
+          lat: currentLocation.lat,
+          lng: currentLocation.lng,
+          radius: 20
+        }
+      });
+      
+      setNearbyDrivers(response.data.drivers || []);
+      console.log(`Found ${response.data.drivers.length} nearby drivers`);
+      
+      // Update map if it's open
+      if (showLiveDriverMap && liveMapInstance) {
+        updateDriverMarkers(response.data.drivers || []);
+      }
+    } catch (error) {
+      console.error('Error fetching nearby drivers:', error);
+    } finally {
+      setIsLoadingDrivers(false);
+    }
+  };
+
+  const initializeLiveDriverMap = () => {
+    const mapElement = document.getElementById('live-driver-map');
+    if (!mapElement || !window.google || !window.google.maps || !currentLocation) {
+      return;
+    }
+
+    const map = new window.google.maps.Map(mapElement, {
+      zoom: 14,
+      center: currentLocation,
+      mapTypeId: 'roadmap',
+      styles: [
+        {
+          featureType: 'poi',
+          elementType: 'labels',
+          stylers: [{ visibility: 'off' }]
+        }
+      ]
+    });
+
+    // Add rider location marker
+    new window.google.maps.Marker({
+      position: currentLocation,
+      map: map,
+      title: 'Your Location',
+      icon: {
+        url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+          <svg width="44" height="44" viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="22" cy="22" r="18" fill="#10b981" stroke="#ffffff" stroke-width="4"/>
+            <circle cx="22" cy="22" r="6" fill="#ffffff"/>
+            <circle cx="22" cy="22" r="2" fill="#10b981"/>
+          </svg>
+        `),
+        scaledSize: new window.google.maps.Size(44, 44),
+        anchor: new window.google.maps.Point(22, 22)
+      },
+      zIndex: 2000
+    });
+
+    setLiveMapInstance(map);
+    
+    // Initial driver markers
+    if (nearbyDrivers.length > 0) {
+      updateDriverMarkers(nearbyDrivers);
+    }
+  };
+
+  const updateDriverMarkers = (drivers) => {
+    if (!liveMapInstance) return;
+
+    // Clear existing driver markers
+    driverMarkers.forEach(marker => marker.setMap(null));
+
+    // Vehicle-specific SVG icons (same as driver dashboard)
+    const vehicleIcons = {
+      bike: `
+        <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="20" cy="20" r="16" fill="#f97316" stroke="#ffffff" stroke-width="3"/>
+          <g transform="translate(8,8)" fill="white">
+            <circle cx="6" cy="18" r="3" stroke="white" stroke-width="1" fill="none"/>
+            <circle cx="18" cy="18" r="3" stroke="white" stroke-width="1" fill="none"/>
+            <path d="M6 18 L12 8 L16 8 L18 12 L14 12 L10 18" stroke="white" stroke-width="1" fill="none"/>
+          </g>
+        </svg>
+      `,
+      auto: `
+        <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="20" cy="20" r="16" fill="#eab308" stroke="#ffffff" stroke-width="3"/>
+          <g transform="translate(6,10)" fill="white">
+            <rect x="2" y="8" width="24" height="10" rx="2" stroke="white" stroke-width="1" fill="none"/>
+            <circle cx="6" cy="20" r="1.5" stroke="white" stroke-width="1" fill="none"/>
+            <circle cx="22" cy="20" r="1.5" stroke="white" stroke-width="1" fill="none"/>
+            <path d="M8 8 L8 4 L20 4 L20 8" stroke="white" stroke-width="1" fill="none"/>
+          </g>
+        </svg>
+      `,
+      car: `
+        <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="20" cy="20" r="16" fill="#3b82f6" stroke="#ffffff" stroke-width="3"/>
+          <g transform="translate(4,12)" fill="white">
+            <rect x="4" y="8" width="24" height="8" rx="2" stroke="white" stroke-width="1" fill="none"/>
+            <circle cx="8" cy="18" r="1.5" stroke="white" stroke-width="1" fill="none"/>
+            <circle cx="24" cy="18" r="1.5" stroke="white" stroke-width="1" fill="none"/>
+            <path d="M6 8 L8 4 L24 4 L26 8" stroke="white" stroke-width="1" fill="none"/>
+          </g>
+        </svg>
+      `,
+      suv: `
+        <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="20" cy="20" r="16" fill="#7c3aed" stroke="#ffffff" stroke-width="3"/>
+          <g transform="translate(2,10)" fill="white">
+            <rect x="4" y="8" width="28" height="10" rx="2" stroke="white" stroke-width="1" fill="none"/>
+            <circle cx="9" cy="20" r="2" stroke="white" stroke-width="1" fill="none"/>
+            <circle cx="27" cy="20" r="2" stroke="white" stroke-width="1" fill="none"/>
+            <path d="M6 8 L8 2 L28 2 L30 8" stroke="white" stroke-width="1" fill="none"/>
+          </g>
+        </svg>
+      `
+    };
+
+    const newMarkers = drivers.map(driver => {
+      const marker = new window.google.maps.Marker({
+        position: driver.current_location,
+        map: liveMapInstance,
+        title: `${driver.name} - ${driver.vehicle_type.toUpperCase()} (${driver.distance_km}km away)`,
+        icon: {
+          url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(vehicleIcons[driver.vehicle_type] || vehicleIcons.car),
+          scaledSize: new window.google.maps.Size(40, 40),
+          anchor: new window.google.maps.Point(20, 20)
+        },
+        zIndex: 1000
+      });
+
+      // Add info window for each driver
+      const infoWindow = new window.google.maps.InfoWindow({
+        content: `
+          <div style="padding: 12px; min-width: 220px;">
+            <h3 style="margin: 0 0 8px 0; color: #1f2937; font-weight: bold; display: flex; align-items: center;">
+              🚗 ${driver.name}
+            </h3>
+            <div style="background: #f3f4f6; padding: 8px; border-radius: 6px; margin-bottom: 8px;">
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px;">
+                <div><strong>Vehicle:</strong> ${driver.vehicle_type.toUpperCase()}</div>
+                <div><strong>Distance:</strong> ${driver.distance_km} km</div>
+                <div><strong>Rate:</strong> ₹${driver.per_km_rate}/km</div>
+                <div><strong>Rating:</strong> ⭐ ${driver.rating.toFixed(1)}</div>
+              </div>
+            </div>
+            <div style="font-size: 12px; color: #6b7280;">
+              <div><strong>Vehicle No:</strong> ${driver.vehicle_number || 'Not available'}</div>
+              <div style="margin-top: 4px;"><strong>Available:</strong> <span style="color: #10b981;">✅ Online</span></div>
+            </div>
+          </div>
+        `
+      });
+
+      marker.addListener('click', () => {
+        // Close any open info windows
+        driverMarkers.forEach(m => {
+          if (m.infoWindow) m.infoWindow.close();
+        });
+        infoWindow.open(liveMapInstance, marker);
+      });
+
+      marker.infoWindow = infoWindow;
+      return marker;
+    });
+
+    setDriverMarkers(newMarkers);
+  };
+
+  // Auto-refresh nearby drivers every 15 seconds when live map is open
+  useEffect(() => {
+    let interval;
+    if (showLiveDriverMap && currentLocation) {
+      fetchNearbyDrivers(); // Initial load
+      interval = setInterval(fetchNearbyDrivers, 15000); // Refresh every 15 seconds
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [showLiveDriverMap, currentLocation]);
+
+  // Initialize map when it becomes visible
+  useEffect(() => {
+    if (showLiveDriverMap && currentLocation) {
+      setTimeout(initializeLiveDriverMap, 100);
+    }
+  }, [showLiveDriverMap, currentLocation]);
+
   useEffect(() => {
     getCurrentLocation();
     fetchCurrentRides();
