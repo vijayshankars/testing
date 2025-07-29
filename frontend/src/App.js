@@ -1819,7 +1819,6 @@ const DriverDashboard = () => {
             )}
             
           </div>
-    </div>
 
     {/* OTP Verification Modal */}
     {selectedRideForOTP && (
