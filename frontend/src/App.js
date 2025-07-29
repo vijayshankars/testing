@@ -356,44 +356,6 @@ const useDriverNotifications = (isAvailable, rideRequests) => {
 };
 
 // Rider Dashboard Component
-
-  const verifyVehicleWithVahan = async () => {
-    if (!profileForm.vehicle_number) {
-      alert('Please enter vehicle number first');
-      return;
-    }
-    
-    setIsVerifyingVehicle(true);
-    setVehicleVerificationStatus(null);
-    
-    try {
-      const response = await axios.post(`${API}/driver/verify-vehicle`, {
-        vehicle_number: profileForm.vehicle_number,
-        vehicle_type: profileForm.vehicle_type
-      });
-      
-      if (response.data.success) {
-        setVehicleVerificationStatus({
-          success: true,
-          message: 'Vehicle verified successfully with VAHAN system!',
-          data: response.data.vehicle_data
-        });
-      } else {
-        setVehicleVerificationStatus({
-          success: false,
-          message: response.data.message || 'Vehicle verification failed'
-        });
-      }
-    } catch (error) {
-      console.error('Vehicle verification error:', error);
-      setVehicleVerificationStatus({
-        success: false,
-        message: error.response?.data?.detail || 'Vehicle verification service unavailable. Please try again later.'
-      });
-    } finally {
-      setIsVerifyingVehicle(false);
-    }
-  };
   
   // Use notification system
   const { notificationPermission } = useDriverNotifications(isAvailable, rideRequests);
