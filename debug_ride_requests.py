@@ -16,7 +16,7 @@ from dotenv import load_dotenv
 load_dotenv('/app/backend/.env')
 
 # Configuration
-BASE_URL = "https://eeecc66c-8e45-4d9e-be52-12ef3fc1477e.preview.emergentagent.com/api"
+BASE_URL = "https://3be44877-be55-4f11-a89f-8fbc7e4df5e7.preview.emergentagent.com/api"
 TIMEOUT = 30
 
 # MongoDB connection for direct database queries
