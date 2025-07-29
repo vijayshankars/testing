@@ -1217,7 +1217,7 @@ async def request_ride(
         "ride_otp": None
     }
     
-    result = await db.rides.insert_one(ride_dict)
+    result = await db.ride_requests.insert_one(ride_dict)
     
     # Store discount usage if discount was applied
     if discount_applied:
