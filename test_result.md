@@ -469,6 +469,18 @@ frontend:
           agent: "main" 
           comment: "✅ ROLLBACK COMPLETED - VEHICLE SELECTION RESTORED: Successfully rolled back all changes and fully restored the vehicle selection functionality as requested by user. CHANGES REVERTED: 1) ✅ Restored State Variables: Re-added availableVehicles, selectedVehicleType, showVehicleSelection, and isLoadingVehicles state management, 2) ✅ Restored Functions: Brought back fetchAvailableVehiclesByType() function with complete vehicle grouping logic, rate calculations, and driver analysis, 3) ✅ Restored Enhanced UI: Re-implemented the complete 'Choose Your Vehicle' section with vehicle cards, black circular icons, rate information, driver availability counts, and interactive selection, 4) ✅ Restored Enhanced Booking: Updated requestRide() function to include vehicle selection validation and preferred vehicle type handling, 5) ✅ Restored useEffect Hooks: Re-added automatic vehicle fetching when pickup and drop locations are entered. RESULT: The rider dashboard is now back to the full vehicle selection experience where users enter pickup/drop locations, view available vehicle types with rates and driver information, select their preferred vehicle, and book rides with complete transparency of pricing and availability. All previous functionality has been fully restored."
 
+  - task: "Remove Available Drivers Nearby and Enhance Your Rides"
+    implemented: true
+    working: true
+    file: "frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "✅ AVAILABLE DRIVERS NEARBY REMOVED AND YOUR RIDES ENHANCED: Successfully removed 'Available Drivers Nearby' section and enhanced 'Your Rides' with comprehensive vehicle and driver details as requested. CHANGES IMPLEMENTED: 1) ✅ Removed Available Drivers Section: Completely eliminated the 'Available Drivers Nearby' static list that appeared to the left of 'Your Rides', removed driver cards showing name, vehicle type, distance, and per km rates, cleaned up layout and improved focus on ride history, 2) ✅ Enhanced Your Rides Section: Added comprehensive vehicle and driver information display, created separate sections for Driver Information and Vehicle Information with professional styling, 3) ✅ Enhanced Vehicle Details: Added black circular vehicle type icons (🏍️ bike, 🛺 auto, 🚗 car, 🚛 suv), displays preferred vehicle type prominently, shows vehicle number with styled background, includes per km rate information when available, 4) ✅ Enhanced Driver Details: Shows driver name with clickable phone number, displays driver rating with star icon, professional contact information layout, 5) ✅ Added Ride OTP Display: Shows ride OTP prominently for active rides, purple styling with clear instructions, helps riders share OTP with drivers, 6) ✅ Default Vehicle Display: Shows requested vehicle type for rides without assigned drivers, provides clear status updates, 7) ✅ Professional Styling: Gradient backgrounds and organized grid layouts, clear visual hierarchy with icons and colors, responsive design with proper spacing. RESULT: 'Your Rides' now provides comprehensive vehicle and driver information in a clean, organized format while the redundant 'Available Drivers Nearby' section has been removed, creating a more focused and informative ride management experience."
+
   - task: "Real-Time Live Driver Map for Riders"
     implemented: true
     working: true
