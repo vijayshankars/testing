@@ -2148,6 +2148,10 @@ const RiderDashboard = () => {
   const [promoCode, setPromoCode] = useState('');
   const [appliedDiscount, setAppliedDiscount] = useState(null);
   const [availableDiscounts, setAvailableDiscounts] = useState([]);
+  const [showLiveDriverMap, setShowLiveDriverMap] = useState(false);
+  const [nearbyDrivers, setNearbyDrivers] = useState([]);
+  const [liveMapInstance, setLiveMapInstance] = useState(null);
+  const [isLoadingDrivers, setIsLoadingDrivers] = useState(false);
   const [showDiscountModal, setShowDiscountModal] = useState(false);
   const [isApplyingDiscount, setIsApplyingDiscount] = useState(false);
   
