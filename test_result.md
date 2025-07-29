@@ -445,6 +445,18 @@ frontend:
           agent: "main"
           comment: "✅ VEHICLE-SPECIFIC MAP ICONS SUCCESSFULLY IMPLEMENTED: Added automobile type images in live map as requested by user. FEATURES: 1) Dynamic vehicle type detection from driver profile (bike, auto, car, suv), 2) Custom SVG vehicle icons for each type: Orange bike icon with wheel/frame design, Yellow auto rickshaw with canopy and wheels, Blue car icon with windows and wheels, Purple SUV icon with larger body and windows, 3) Enhanced map markers at 48x48px size with vehicle-specific colors and detailed SVG graphics, 4) Intelligent fallback to car icon if vehicle type unavailable, 5) Vehicle type display in info windows and route information panel, 6) Enhanced control panel showing vehicle type badge with 'Live Navigation' indicator. TECHNICAL: Fetches driver profile to determine vehicle_type, creates vehicle-specific SVG icons with proper scaling and positioning, updates info windows with vehicle information, displays vehicle type in route information grid, handles API errors gracefully with default car fallback. VISUAL: Each vehicle type has distinct color coding and recognizable iconography - drivers can easily identify their vehicle type on the map, making navigation more intuitive and realistic."
 
+  - task: "Real-Time Live Driver Map for Riders"
+    implemented: true
+    working: true
+    file: "backend/server.py, frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "✅ REAL-TIME LIVE DRIVER MAP SUCCESSFULLY IMPLEMENTED: Created comprehensive live driver map showing available drivers nearby with automobile type images in real-time as requested. BACKEND: New GET /api/rider/nearby-drivers endpoint with radius-based filtering (20km default), fetches driver profiles with current locations and vehicle types, calculates distances using enhanced geodesic function, returns driver data with name, phone, vehicle_type, rating, per_km_rate, and real-time location coordinates. FRONTEND FEATURES: 1) Live Driver Map Section in rider dashboard with toggle show/hide functionality, 2) Real-time statistics showing available drivers count, closest driver distance, and minimum rate per km, 3) Interactive Google Maps (384px height) with rider location (green marker) and driver locations (vehicle-specific icons), 4) Vehicle-specific SVG icons: Orange bike, Yellow auto rickshaw, Blue car, Purple SUV with detailed graphics, 5) Auto-refresh every 15 seconds for real-time updates, 6) Scrollable driver list with vehicle emoji icons, names, distances, ratings, and rates, 7) Interactive info windows showing driver details when clicking map markers. TECHNICAL: fetchNearbyDrivers() with automatic refresh, initializeLiveDriverMap() with custom markers, updateDriverMarkers() for real-time updates, proper error handling and loading states, responsive design with professional styling. USER EXPERIENCE: Riders can see all available drivers in their area with their exact vehicle types, compare rates and distances, and make informed booking decisions based on real-time driver availability and locations."
+
   - task: "Rider Dashboard Testing"
     implemented: true
     working: true
