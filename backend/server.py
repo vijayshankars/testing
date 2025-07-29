@@ -988,7 +988,11 @@ async def accept_ride(ride_id: str, current_user: dict = Depends(get_current_use
     }
 
 @api_router.post("/driver/reject-ride/{ride_id}")
-async def reject_ride(ride_id: str, current_user: dict = Depends(get_current_user)):
+async def reject_ride(
+    ride_id: str, 
+    rejection: RideRejectionRequest,
+    current_user: dict = Depends(get_current_user)
+):
     """Reject a ride request and prevent it from showing to this driver again"""
     if current_user["user_type"] != "driver":
         raise HTTPException(status_code=403, detail="Only drivers can reject rides")
@@ -1003,7 +1007,7 @@ async def reject_ride(ride_id: str, current_user: dict = Depends(get_current_use
         "ride_id": ride_id,
         "driver_id": current_user["id"],
         "rejected_at": datetime.utcnow(),
-        "reason": "Driver rejected"
+        "reason": rejection.reason or "Driver not available"
     }
     
     # Store the rejection in a separate collection
