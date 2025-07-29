@@ -354,12 +354,7 @@ const useDriverNotifications = (isAvailable, rideRequests) => {
 
   return { notificationPermission };
 };
-// Rider Dashboard Component
-const RiderDashboard = () => {
-    if (!profileForm.license_number) {
-      alert('Please enter license number first');
-      return;
-    }
+
     
     setIsVerifyingLicense(true);
     setLicenseVerificationStatus(null);
