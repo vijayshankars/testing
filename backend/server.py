@@ -1208,7 +1208,7 @@ async def request_ride(
                             discount_amount = discount["discount_value"]
                         elif discount["discount_type"] == "first_ride":
                             # Check if this is user's first ride
-                            first_ride_count = await db.rides.count_documents({
+                            first_ride_count = await db.ride_requests.count_documents({
                                 "rider_id": current_user["id"],
                                 "status": "completed"
                             })
