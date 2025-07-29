@@ -169,6 +169,7 @@ class RideRequest(BaseModel):
     drop_location: Dict[str, Any]   # {"lat": float, "lng": float, "address": str}
     estimated_distance: float  # in km
     estimated_fare: float
+    preferred_vehicle_type: str = "car"  # bike, auto, car, suv
     status: str = "requested"  # requested, accepted, in_progress, completed, cancelled
     driver_id: Optional[str] = None
     ride_otp: Optional[str] = None  # 4-digit OTP for ride verification
