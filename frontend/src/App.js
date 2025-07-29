@@ -2305,7 +2305,7 @@ const RiderDashboard = () => {
     const vehicleIcons = {
       bike: `
         <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="20" cy="20" r="16" fill="#f97316" stroke="#ffffff" stroke-width="3"/>
+          <circle cx="20" cy="20" r="16" fill="#000000" stroke="#ffffff" stroke-width="3"/>
           <g transform="translate(8,8)" fill="white">
             <circle cx="6" cy="18" r="3" stroke="white" stroke-width="1" fill="none"/>
             <circle cx="18" cy="18" r="3" stroke="white" stroke-width="1" fill="none"/>
@@ -2315,7 +2315,7 @@ const RiderDashboard = () => {
       `,
       auto: `
         <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="20" cy="20" r="16" fill="#eab308" stroke="#ffffff" stroke-width="3"/>
+          <circle cx="20" cy="20" r="16" fill="#000000" stroke="#ffffff" stroke-width="3"/>
           <g transform="translate(6,10)" fill="white">
             <rect x="2" y="8" width="24" height="10" rx="2" stroke="white" stroke-width="1" fill="none"/>
             <circle cx="6" cy="20" r="1.5" stroke="white" stroke-width="1" fill="none"/>
@@ -2326,7 +2326,7 @@ const RiderDashboard = () => {
       `,
       car: `
         <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="20" cy="20" r="16" fill="#3b82f6" stroke="#ffffff" stroke-width="3"/>
+          <circle cx="20" cy="20" r="16" fill="#000000" stroke="#ffffff" stroke-width="3"/>
           <g transform="translate(4,12)" fill="white">
             <rect x="4" y="8" width="24" height="8" rx="2" stroke="white" stroke-width="1" fill="none"/>
             <circle cx="8" cy="18" r="1.5" stroke="white" stroke-width="1" fill="none"/>
@@ -2337,7 +2337,7 @@ const RiderDashboard = () => {
       `,
       suv: `
         <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="20" cy="20" r="16" fill="#7c3aed" stroke="#ffffff" stroke-width="3"/>
+          <circle cx="20" cy="20" r="16" fill="#000000" stroke="#ffffff" stroke-width="3"/>
           <g transform="translate(2,10)" fill="white">
             <rect x="4" y="8" width="28" height="10" rx="2" stroke="white" stroke-width="1" fill="none"/>
             <circle cx="9" cy="20" r="2" stroke="white" stroke-width="1" fill="none"/>
