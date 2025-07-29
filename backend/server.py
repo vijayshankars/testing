@@ -185,6 +185,7 @@ class RideRequestCreate(BaseModel):
     drop_location: Dict[str, Any]
     estimated_distance: float
     estimated_fare: float
+    preferred_vehicle_type: Optional[str] = "car"  # bike, auto, car, suv
     promo_code: Optional[str] = None
 
 class RideResponse(BaseModel):
