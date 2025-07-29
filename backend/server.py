@@ -295,6 +295,11 @@ class RideOTPVerification(BaseModel):
 class RideStatusUpdate(BaseModel):
     ride_id: str
     status: str  # "completed"
+
+class RideRejectionRequest(BaseModel):
+    ride_id: str
+    reason: Optional[str] = "Driver not available"
+    
 def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
