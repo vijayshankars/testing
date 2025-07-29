@@ -774,19 +774,30 @@ const DriverDashboard = () => {
   };
 
   const rejectRide = async (rideId) => {
-    if (!confirm('Are you sure you want to reject this ride request? It will be removed from your list.')) {
+    setSelectedRideForReject(rideId);
+    setShowRejectModal(true);
+  };
+
+  const confirmRejectRide = async () => {
+    if (!rejectReason.trim()) {
+      alert('Please provide a reason for rejection');
       return;
     }
 
     try {
-      await axios.post(`${API}/driver/reject-ride/${rideId}`);
+      await axios.post(`${API}/driver/reject-ride/${selectedRideForReject}`, {
+        reason: rejectReason
+      });
       
       // Remove the rejected ride from the list immediately
       setRideRequests(prevRequests => 
-        prevRequests.filter(request => request.id !== rideId)
+        prevRequests.filter(request => request.id !== selectedRideForReject)
       );
       
       alert('Ride request rejected successfully.');
+      setShowRejectModal(false);
+      setSelectedRideForReject(null);
+      setRejectReason('');
       
     } catch (error) {
       console.error('Error rejecting ride:', error);
