@@ -355,22 +355,7 @@ const useDriverNotifications = (isAvailable, rideRequests) => {
   return { notificationPermission };
 };
 
-// Rider Dashboard Component
-    const mapElement = document.getElementById(`current-ride-map-${ride.id}`);
-    if (!mapElement || !window.google || !window.google.maps) {
-      mapElement.innerHTML = '<div class="flex items-center justify-center h-80 text-red-500">❌ Google Maps not loaded</div>';
-      return;
-    }
 
-    try {
-      // Get driver profile to determine vehicle type
-      let driverVehicleType = 'car'; // default
-      try {
-        const driverProfile = await axios.get(`${API}/driver/profile`);
-        driverVehicleType = driverProfile.data.vehicle_type || 'car';
-      } catch (error) {
-        console.log('Could not fetch driver vehicle type, using default car icon');
-      }
 
       // Vehicle-specific SVG icons
       const vehicleIcons = {
