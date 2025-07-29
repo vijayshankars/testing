@@ -355,18 +355,7 @@ const useDriverNotifications = (isAvailable, rideRequests) => {
   return { notificationPermission };
 };
 
-
-
-
-
-  const fetchAcceptedRides = async () => {
-    try {
-      const response = await axios.get(`${API}/driver/ride-history?status=accepted`);
-      setAcceptedRides(response.data.rides);
-    } catch (error) {
-      console.error('Error fetching accepted rides:', error);
-    }
-  };
+// Rider Dashboard Component
 
   const fetchRideHistory = async () => {
     try {
