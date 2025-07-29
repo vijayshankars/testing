@@ -2152,6 +2152,10 @@ const RiderDashboard = () => {
   const [nearbyDrivers, setNearbyDrivers] = useState([]);
   const [liveMapInstance, setLiveMapInstance] = useState(null);
   const [isLoadingDrivers, setIsLoadingDrivers] = useState(false);
+  const [availableVehicles, setAvailableVehicles] = useState([]);
+  const [selectedVehicleType, setSelectedVehicleType] = useState(null);
+  const [showVehicleSelection, setShowVehicleSelection] = useState(false);
+  const [isLoadingVehicles, setIsLoadingVehicles] = useState(false);
   const [showDiscountModal, setShowDiscountModal] = useState(false);
   const [isApplyingDiscount, setIsApplyingDiscount] = useState(false);
   
