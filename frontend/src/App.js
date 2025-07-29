@@ -356,9 +356,6 @@ const useDriverNotifications = (isAvailable, rideRequests) => {
 };
 
 // Rider Dashboard Component
-
-  // Enhanced Google Maps initialization for current rides
-  const initializeCurrentRideMap = async (ride) => {
     const mapElement = document.getElementById(`current-ride-map-${ride.id}`);
     if (!mapElement || !window.google || !window.google.maps) {
       mapElement.innerHTML = '<div class="flex items-center justify-center h-80 text-red-500">❌ Google Maps not loaded</div>';
