@@ -1344,7 +1344,6 @@ const DriverDashboard = () => {
   }
 
   return (
-    <>
     <div className="min-h-screen bg-gray-100">
       {/* Header */}
       <div className="bg-white shadow-sm">
